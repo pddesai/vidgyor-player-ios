@@ -1,0 +1,345 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 6.4 effective-5.10 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)
+// swift-module-flags: -target arm64-apple-ios16.0 -enable-objc-interop -enable-library-evolution -language-mode 5 -O -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -module-name Vidgyor
+// swift-module-flags-ignorable:  -formal-cxx-interoperability-mode=off -interface-compiler-version 6.4
+import AVFoundation
+import AVKit
+import CoreGraphics
+import Foundation
+import GoogleInteractiveMediaAds
+import Network
+import Swift
+import UIKit
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+import os
+public struct AnalyticsConfig {
+  public var customEnabled: Swift::Bool?
+  public var firebaseEnabled: Swift::Bool?
+  public init(customEnabled: Swift::Bool? = nil, firebaseEnabled: Swift::Bool? = nil)
+}
+public struct ErrorConfig {
+  public var enabled: Swift::Bool?
+  public var title: Swift::String?
+  public var message: Swift::String?
+  public var retryTitle: Swift::String?
+  public init(enabled: Swift::Bool? = nil, title: Swift::String? = nil, message: Swift::String? = nil, retryTitle: Swift::String? = nil)
+}
+public struct LogoConfig {
+  public var enable: Swift::Bool?
+  public var logoUrl: Swift::String?
+  public var contentMode: UIKit::UIView.UIKit::ContentMode
+  public var widthPercentage: CoreFoundation::CGFloat?
+  public var heightPercentage: CoreFoundation::CGFloat?
+  public var horizontalBias: CoreFoundation::CGFloat?
+  public var verticalBias: CoreFoundation::CGFloat?
+  public init(enable: Swift::Bool? = nil, logoUrl: Swift::String? = nil, contentMode: UIKit::UIView.UIKit::ContentMode = .scaleAspectFit, widthPercentage: CoreFoundation::CGFloat? = nil, heightPercentage: CoreFoundation::CGFloat? = nil, horizontalBias: CoreFoundation::CGFloat? = nil, verticalBias: CoreFoundation::CGFloat? = nil)
+}
+public struct OverlayConfig {
+  public var autoHideDelay: Foundation::TimeInterval?
+  public var qualityControl: Swift::Bool?
+  public var audioControl: Swift::Bool?
+  public var captionControl: Swift::Bool?
+  public var speedControl: Swift::Bool?
+  public var showLiveBadge: Swift::Bool?
+  public var fullScreenControl: Swift::Bool?
+  public var seekForwardIncrement: Foundation::TimeInterval?
+  public var seekBackIncrement: Foundation::TimeInterval?
+  public var liveEdgeThreshold: Foundation::TimeInterval?
+  public var backgroundAlpha: CoreFoundation::CGFloat?
+  public var enableSettings: Swift::Bool?
+  public var showTitle: Swift::Bool?
+  public init(autoHideDelay: Foundation::TimeInterval? = nil, qualityControl: Swift::Bool? = nil, audioControl: Swift::Bool? = nil, captionControl: Swift::Bool? = nil, speedControl: Swift::Bool? = nil, showLiveBadge: Swift::Bool? = nil, fullScreenControl: Swift::Bool? = nil, seekForwardIncrement: Foundation::TimeInterval? = nil, seekBackIncrement: Foundation::TimeInterval? = nil, liveEdgeThreshold: Foundation::TimeInterval? = nil, backgroundAlpha: CoreFoundation::CGFloat? = nil, enableSettings: Swift::Bool? = nil, showTitle: Swift::Bool? = nil)
+}
+public enum PlayerConfig {
+  case live(Vidgyor::PlayerConfig.Vidgyor::LiveConfig)
+  case vod(Vidgyor::PlayerConfig.Vidgyor::VODConfig)
+  public struct LiveConfig {
+    public let title: Swift::String?
+    public let livetvUrl: Swift::String?
+    public let prerollAdTag: Swift::String?
+    public let disablePrerollAdTags: Swift::Bool
+    public let disableMidrollAdTags: Swift::Bool
+    public let midrollAdTags: [Swift::String]
+    public let delegate: any Vidgyor::VidgyorLivePlayerDelegate
+    public init(title: Swift::String? = nil, livetvUrl: Swift::String? = nil, prerollAdTag: Swift::String? = nil, disablePrerollAdTags: Swift::Bool = false, disableMidrollAdTags: Swift::Bool = false, midrollAdTags: [Swift::String] = [], delegate: any Vidgyor::VidgyorLivePlayerDelegate)
+    @available(*, deprecated, renamed: "title")
+    public var channelName: Swift::String? {
+      get
+    }
+    @available(*, deprecated, message: "Use init(title:livetvUrl:...) — channelName was renamed to title")
+    public init(channelName: Swift::String?, livetvUrl: Swift::String? = nil, prerollAdTag: Swift::String? = nil, disablePrerollAdTags: Swift::Bool = false, disableMidrollAdTags: Swift::Bool = false, midrollAdTags: [Swift::String] = [], delegate: any Vidgyor::VidgyorLivePlayerDelegate)
+  }
+  public struct VODConfig {
+    public let vodList: [Vidgyor::VODItem]
+    public let vodPrerollAdTag: Swift::String?
+    public let disableVodPrerollAdTags: Swift::Bool
+    public let delegate: any Vidgyor::VidgyorVODPlayerDelegate
+    public init(vodList: [Vidgyor::VODItem], vodPrerollAdTag: Swift::String? = nil, disableVodPrerollAdTags: Swift::Bool = false, delegate: any Vidgyor::VidgyorVODPlayerDelegate)
+  }
+}
+public struct SpPlayerConfig {
+  public var videoConfig: Vidgyor::VideoConfig
+  public var overlayConfig: Vidgyor::OverlayConfig
+  public var logoConfig: Vidgyor::LogoConfig
+  public var analyticsConfig: Vidgyor::AnalyticsConfig
+  public var errorConfig: Vidgyor::ErrorConfig
+  public init(videoConfig: Vidgyor::VideoConfig = VideoConfig(), overlayConfig: Vidgyor::OverlayConfig = OverlayConfig(), logoConfig: Vidgyor::LogoConfig = LogoConfig(), analyticsConfig: Vidgyor::AnalyticsConfig = AnalyticsConfig(), errorConfig: Vidgyor::ErrorConfig = ErrorConfig())
+}
+public enum VideoResizeMode {
+  case fit
+  case zoom
+  case fill
+  public static func == (a: Vidgyor::VideoResizeMode, b: Vidgyor::VideoResizeMode) -> Swift::Bool
+  public func hash(into hasher: inout Swift::Hasher)
+  public var hashValue: Swift::Int {
+    get
+  }
+}
+public enum RepeatMode {
+  case off
+  case one
+  case all
+  public static func == (a: Vidgyor::RepeatMode, b: Vidgyor::RepeatMode) -> Swift::Bool
+  public func hash(into hasher: inout Swift::Hasher)
+  public var hashValue: Swift::Int {
+    get
+  }
+}
+public struct VideoConfig {
+  public var resizeMode: Vidgyor::VideoResizeMode?
+  public var autoPlay: Swift::Bool?
+  public var startPositionMs: Swift::Int?
+  public var autoRotate: Swift::Bool?
+  public var repeatMode: Vidgyor::RepeatMode?
+  public init(resizeMode: Vidgyor::VideoResizeMode? = nil, autoPlay: Swift::Bool? = nil, startPositionMs: Swift::Int? = nil, autoRotate: Swift::Bool? = nil, repeatMode: Vidgyor::RepeatMode? = nil)
+}
+public protocol VidgyorPlayerDelegate : AnyObject {
+  func didFailToLoadConfiguration(error: Swift::String)
+  func notifyPlay()
+  func notifyPause()
+  func isAdStart(value: Swift::Bool)
+  func isAdEnd(value: Swift::Bool)
+  func isAdSkip(value: Swift::Bool)
+  func adError()
+  func onPlayerError(error: Swift::String)
+  func onPlaybackRecoveryStarted()
+  func onPlaybackRecovered()
+  func didRequestFocusMove(_ direction: Vidgyor::PlayerFocusDirection)
+  func playerWillEnterFullScreen()
+  func playerWillExitFullScreen()
+}
+extension Vidgyor::VidgyorPlayerDelegate {
+  public func notifyPlay()
+  public func notifyPause()
+  public func isAdStart(value: Swift::Bool)
+  public func isAdEnd(value: Swift::Bool)
+  public func isAdSkip(value: Swift::Bool)
+  public func adError()
+  public func onPlayerError(error: Swift::String)
+  public func onPlaybackRecoveryStarted()
+  public func onPlaybackRecovered()
+  public func didRequestFocusMove(_ direction: Vidgyor::PlayerFocusDirection)
+  public func playerWillEnterFullScreen()
+  public func playerWillExitFullScreen()
+}
+public protocol VidgyorVODPlayerDelegate : Vidgyor::VidgyorPlayerDelegate {
+  func onCurrentPlaybackTime(seconds: Swift::Int)
+  func onTimeUpdate(currentPosition: Swift::Int64)
+  func onDuration(duration: Swift::Int64)
+  func onVideoComplete()
+  func notifyBufferStart(value: Swift::Int64)
+  func notifySeekStart(value: Swift::Int64)
+  func contentStart()
+  func videoWatchPercent(value: Swift::Int)
+  func didFinishPlayingAllVideos()
+}
+extension Vidgyor::VidgyorVODPlayerDelegate {
+  public func onCurrentPlaybackTime(seconds: Swift::Int)
+  public func onTimeUpdate(currentPosition: Swift::Int64)
+  public func onDuration(duration: Swift::Int64)
+  public func onVideoComplete()
+  public func notifyBufferStart(value: Swift::Int64)
+  public func notifySeekStart(value: Swift::Int64)
+  public func contentStart()
+  public func videoWatchPercent(value: Swift::Int)
+}
+public protocol VidgyorLivePlayerDelegate : Vidgyor::VidgyorPlayerDelegate {
+  func contentStart()
+  func videoLiveWatchDuration(value: Swift::Int)
+  func getLiveUrl(str: Swift::String)
+  func isAdPlayingCallback(isPlaying: Swift::Bool)
+}
+extension Vidgyor::VidgyorLivePlayerDelegate {
+  public func contentStart()
+  public func videoLiveWatchDuration(value: Swift::Int)
+  public func getLiveUrl(str: Swift::String)
+  public func isAdPlayingCallback(isPlaying: Swift::Bool)
+}
+public enum VidgyorPlayerError : Foundation::LocalizedError {
+  case channelNotFound(channelId: Swift::String)
+  case invalidVideoURL
+  case requestIdGenerationFailed
+  case invalidResponse
+  case unknown
+  public var errorDescription: Swift::String? {
+    get
+  }
+}
+public enum AdBreakDetectionMethod : Swift::String {
+  case scte35
+  case polling
+  public init?(rawValue: Swift::String)
+  public typealias RawValue = Swift::String
+  public var rawValue: Swift::String {
+    get
+  }
+}
+public protocol PlayableItem {
+  var title: Swift::String? { get }
+  var url: Swift::String { get }
+}
+public protocol PlayerIdentifiable {
+  var videoId: Swift::String? { get }
+}
+public struct VODItem : Vidgyor::PlayableItem, Vidgyor::PlayerIdentifiable {
+  public let url: Swift::String
+  public let thumbnailUrl: Swift::String?
+  public let title: Swift::String?
+  public let videoId: Swift::String?
+  public init(videoUrl: Swift::String, thumbnailUrl: Swift::String? = nil, title: Swift::String? = nil, videoId: Swift::String? = nil)
+  @available(*, deprecated, renamed: "init(videoUrl:thumbnailUrl:title:videoId:)")
+  public init(videoUrl: Swift::String, thumbnailUrl: Swift::String? = nil, videoTitle: Swift::String?, videoId: Swift::String? = nil)
+}
+public struct LiveItem : Vidgyor::PlayableItem {
+  public var title: Swift::String?
+  public var url: Swift::String
+  public init(title: Swift::String? = nil, url: Swift::String)
+}
+public struct Channel : Swift::Decodable {
+  public init(from decoder: any Swift::Decoder) throws
+}
+@objc @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers final public class MediaPlaybackManager : ObjectiveC::NSObject {
+  public static let shared: Vidgyor::MediaPlaybackManager
+  final public var preferredRate: Swift::Float {
+    get
+    set
+  }
+  public enum PlaybackState {
+    case unknown
+    case playing
+    case paused
+    case stopped
+    case completed
+    public static func == (a: Vidgyor::MediaPlaybackManager.Vidgyor::PlaybackState, b: Vidgyor::MediaPlaybackManager.Vidgyor::PlaybackState) -> Swift::Bool
+    public func hash(into hasher: inout Swift::Hasher)
+    public var hashValue: Swift::Int {
+      get
+    }
+  }
+  final public var preferredPeakBitRate: Swift::Double {
+    get
+    set
+  }
+  @objc deinit
+}
+extension Vidgyor::MediaPlaybackManager {
+  final public func setAdBreakDetectionMethod(_ method: Vidgyor::AdBreakDetectionMethod)
+  final public func changeCurrentItem(to item: any Vidgyor::PlayableItem)
+  final public func prewarmPlayer()
+  final public func recordAudioSelection(name: Swift::String?)
+  final public func recordSubtitleSelection(name: Swift::String?, isOff: Swift::Bool)
+  final public func setStartPosition(_ seconds: Foundation::TimeInterval)
+  final public func adPlayingStateDidChange(to isPlaying: Swift::Bool)
+  final public func isAdCurrentlyPlaying() -> Swift::Bool
+  final public func holdContentBuffering(reason: Swift::String)
+  final public func releaseContentBufferHold(reason: Swift::String)
+}
+extension Vidgyor::MediaPlaybackManager {
+  final public func prepareAudioSession()
+}
+extension Vidgyor::MediaPlaybackManager {
+  final public func play(auto: Swift::Bool = false)
+  final public func pause(userInitiated: Swift::Bool = false)
+  final public func stop()
+  final public func currentPlaybackState() -> Vidgyor::MediaPlaybackManager.Vidgyor::PlaybackState
+  final public func seekToLiveEdgeAndPlay(auto: Swift::Bool = false)
+  final public func seek(to seconds: Foundation::TimeInterval, completion: ((Swift::Bool) -> Swift::Void)? = nil)
+  final public func skip(by delta: Foundation::TimeInterval)
+  final public func destroy()
+}
+extension Vidgyor::MediaPlaybackManager : AVFoundation::AVPlayerItemMetadataCollectorPushDelegate, AVFoundation::AVPlayerItemMetadataOutputPushDelegate {
+  @objc final public func metadataOutput(_ output: AVFoundation::AVPlayerItemMetadataOutput, didOutputTimedMetadataGroups groups: [AVFoundation::AVTimedMetadataGroup], from track: AVFoundation::AVPlayerItemTrack?)
+  @objc final public func metadataCollector(_ metadataCollector: AVFoundation::AVPlayerItemMetadataCollector, didCollect metadataGroups: [AVFoundation::AVDateRangeMetadataGroup], indexesOfNewGroups: Foundation::IndexSet, indexesOfModifiedGroups: Foundation::IndexSet)
+}
+public protocol MediaPlaybackDelegate : AnyObject {
+  func playbackManagerIsReadyToPlay(_ manager: Vidgyor::MediaPlaybackManager, player: AVFoundation::AVPlayer)
+  func playbackManagerDidStartPlayback(_ manager: Vidgyor::MediaPlaybackManager)
+  func playbackManagerDidRenderFirstContentFrame(_ manager: Vidgyor::MediaPlaybackManager)
+  func playbackManagerDidStartBuffering(_ manager: Vidgyor::MediaPlaybackManager)
+  func playbackManagerDidStopBuffering(_ manager: Vidgyor::MediaPlaybackManager)
+  func playbackManagerDidPausePlayback(_ manager: Vidgyor::MediaPlaybackManager)
+  func playbackManager(_ manager: Vidgyor::MediaPlaybackManager, didFailWith error: any Swift::Error)
+  func playbackManagerDidStartRecovery(_ manager: Vidgyor::MediaPlaybackManager)
+  func playbackManagerDidRecover(_ manager: Vidgyor::MediaPlaybackManager)
+}
+public protocol VODPlaybackDelegate : AnyObject {
+  func playbackManagerDidFinishPlayback(_ manager: Vidgyor::MediaPlaybackManager)
+  func playbackManagerVideoWatchPercent(value: Swift::Int)
+  func playbackManagerNotifySeekStart(value: Swift::Int64)
+  func playbackManagerNotifyBufferStart(value: Swift::Int64)
+  func playbackManagerOnDuration(duration: Swift::Int64)
+  func playbackManagerOnTimeUpdate(currentPosition: Swift::Int64)
+  func playbackManagerOnCurrentPlaybackTime(seconds: Swift::Int)
+}
+public protocol LivePlaybackDelegate : AnyObject {
+  func isDVRLiveStreaming(_ isDVR: Swift::Bool)
+  func playbackManagerVideoLiveWatchDuration(value: Swift::Int)
+  func playbackManagerShouldStartAd(_ manager: Vidgyor::MediaPlaybackManager, adEndTime: Swift::Double?)
+  func playbackManagerShouldStopAd(_ manager: Vidgyor::MediaPlaybackManager)
+}
+public enum PlayerFocusDirection {
+  case up
+  case down
+  public static func == (a: Vidgyor::PlayerFocusDirection, b: Vidgyor::PlayerFocusDirection) -> Swift::Bool
+  public func hash(into hasher: inout Swift::Hasher)
+  public var hashValue: Swift::Int {
+    get
+  }
+}
+@objc @_inheritsConvenienceInitializers @_Concurrency::MainActor @preconcurrency final public class SpPlayerView : UIKit::UIView {
+  @_Concurrency::MainActor @preconcurrency @objc override dynamic public init(frame: CoreFoundation::CGRect)
+  @_Concurrency::MainActor @preconcurrency @objc required dynamic public init?(coder: Foundation::NSCoder)
+  @_Concurrency::MainActor @preconcurrency @objc override final public func didMoveToWindow()
+  @_Concurrency::MainActor @preconcurrency @objc override final public func layoutSubviews()
+  @objc deinit
+}
+final public class VidgyorPlayer {
+  public static var sdkVersion: Swift::String {
+    get
+  }
+  public static func setDiagnosticLogging(enabled: Swift::Bool, mirrorToSyslog: Swift::Bool = false)
+  public init(accountId: Swift::String, channelId: Swift::String, config: Vidgyor::PlayerConfig, playerConfig: Vidgyor::SpPlayerConfig = SpPlayerConfig())
+  final public func replay()
+  @objc deinit
+}
+extension Vidgyor::VidgyorPlayer {
+  final public func attach(to playerView: Vidgyor::SpPlayerView)
+  @available(*, deprecated, message: "Use attach(to:) instead: create an SpPlayerView in your layout and pass it to attach(to:).")
+  final public func embed(into containerView: UIKit::UIView, in parentVC: UIKit::UIViewController)
+  @available(*, deprecated, message: "Use attach(to:) instead: create an SpPlayerView in your layout and pass it to attach(to:).")
+  final public func embed(in containerViewController: UIKit::UIViewController)
+  final public func dismiss()
+}
+extension Vidgyor::VideoResizeMode : Swift::Equatable {}
+extension Vidgyor::VideoResizeMode : Swift::Hashable {}
+extension Vidgyor::RepeatMode : Swift::Equatable {}
+extension Vidgyor::RepeatMode : Swift::Hashable {}
+extension Vidgyor::AdBreakDetectionMethod : Swift::Equatable {}
+extension Vidgyor::AdBreakDetectionMethod : Swift::Hashable {}
+extension Vidgyor::AdBreakDetectionMethod : Swift::RawRepresentable {}
+extension Vidgyor::MediaPlaybackManager.Vidgyor::PlaybackState : Swift::Equatable {}
+extension Vidgyor::MediaPlaybackManager.Vidgyor::PlaybackState : Swift::Hashable {}
+extension Vidgyor::PlayerFocusDirection : Swift::Equatable {}
+extension Vidgyor::PlayerFocusDirection : Swift::Hashable {}
