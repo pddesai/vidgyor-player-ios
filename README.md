@@ -170,6 +170,10 @@ import Vidgyor
 * Player Lifecycle
 * Best Practices
 * Complete Examples
+* Player Customization (SpPlayerConfig)
+* Repeat and Replay (VOD)
+* Error Screen
+* Diagnostic Logging
 
 
 ## 1. Global Player Instance
@@ -241,7 +245,7 @@ vidgyorPlayer = VidgyorPlayer(
 | `channelId` | `String`      | Associated channel ID.                    |
 | `config`    | `PlayerConfig`| Player configuration (`.vod` or `.live`).|
 
-> **Optional — customize the player.** The initializer also accepts a `playerConfig: SpPlayerConfig`, letting you tune video behavior (`VideoConfig`), on-screen controls (`OverlayConfig`), and a channel logo (`LogoConfig`):
+> **Optional — customize the player.** The initializer also accepts a `playerConfig: SpPlayerConfig`, letting you tune video behavior (`VideoConfig`), on-screen controls (`OverlayConfig`), a channel logo (`LogoConfig`), the error screen (`ErrorConfig`) and analytics (`AnalyticsConfig`). Every option is listed in [Player Customization](#9-player-customization-spplayerconfig).
 > ```swift
 > var overlay = OverlayConfig()
 > overlay.speedControl = true
@@ -398,11 +402,12 @@ let liveConfig = PlayerConfig.LiveConfig(
 | `title`                 | `String?`    | ❌        | Title shown at the top of the controls; `nil` uses the channel name. (Was `channelName`.) |
 | `livetvUrl`             | `String?`    | ❌        | Custom live stream URL (optional).               |
 | `prerollAdTag`          | `String?`    | ❌        | Override preroll ad tag URL.                     |
-| `disablePrerollAdTags`  | `Bool`       | ❌        | Disable preroll ads (default: `false`).          |
-| `disableMidrollAdTags`  | `Bool`       | ❌        | Disable midroll ads (default: `false`).          |
+| `disablePrerollAdTags`  | `Bool`       | ❌        | `true` turns off live pre-roll ads. The default, `false`, leaves it to the channel's configuration. |
+| `disableMidrollAdTags`  | `Bool`       | ❌        | `true` turns off live mid-roll ads. The default, `false`, leaves it to the channel's configuration. |
 | `midrollAdTags`         | `[String]`   | ❌        | Array of midroll ad tag URLs.                    |
 | `delegate` | `VidgyorLivePlayerDelegate` | ✅ | Delegate for playback and analytics events.
 
+> **How live ads are enabled.** Live pre-roll and mid-roll ads play only when the channel's configuration enables them, as on Android. `disablePrerollAdTags` and `disableMidrollAdTags` can only turn ads off: `true` disables them in your app, while `false` leaves the decision to the channel. If live ads don't appear, contact Vidgyor support to check the channel's configuration.
 
 ### Step 2: Initialize Player for Live Content
 ```swift
@@ -882,6 +887,8 @@ Unlike tvOS, there is no need to call `setPlayerFocusEnabled` or `restoreFocusTo
 | Attach player | `vidgyorPlayer?.attach(to: playerView)` | Attaches the player to an `SpPlayerView` you created and starts playback. **Preferred.** | Both |
 | Embed player (deprecated) | `vidgyorPlayer?.embed(in: parentVC)` / `embed(into:in:)` | Backward-compatible shim; the SDK creates the `SpPlayerView` for you. Deprecated: use `attach(to:)`. | Both |
 | Dismiss player | `vidgyorPlayer?.dismiss()` | Removes player and frees resources. | Both |
+| Replay (VOD) | `vidgyorPlayer?.replay()` | Restarts from the first video, including its pre-roll. No effect for live. See [Repeat and Replay](#10-repeat-and-replay-vod). | Both |
+| Diagnostic logging | `VidgyorPlayer.setDiagnosticLogging(enabled:mirrorToSyslog:)` | Turns on SDK logs in a release build. Call before creating a player. See [Diagnostic Logging](#12-diagnostic-logging). | Both |
 | Disable player focus | `vidgyorPlayer?.setPlayerFocusEnabled(false)` | Prevents player from receiving focus (for custom overlays). | tvOS only |
 | Restore player focus | `vidgyorPlayer?.restoreFocusToPlayer()` | Re-enables focus and returns focus to player. | tvOS only |
 | Handle load errors | `didFailToLoadConfiguration(error:)` | The player couldn't load (for example, a configuration or network failure). | Both |
@@ -895,6 +902,8 @@ Unlike tvOS, there is no need to call `setPlayerFocusEnabled` or `restoreFocusTo
 * Avoid multiple player instances at once.
 * Use delegate methods for tracking ads, buffering, and playback.
 * Always dismiss player before switching between VOD and Live modes.
+* With `repeatMode` `.off` (the default), the SDK shows a Replay screen at the end of a VOD list. Dismiss in `didFinishPlayingAllVideos()` only if you'd rather close the player.
+* Don't ship with diagnostic logging turned on.
 * **For custom overlays on tvOS:**
   * Disable player focus with `setPlayerFocusEnabled(false)` before showing UI
   * Restore focus with `restoreFocusToPlayer()` when dismissing UI
@@ -970,12 +979,144 @@ final class LiveViewController: UIViewController, VidgyorLivePlayerDelegate {
 }
 ```
 
+## 9. Player Customization (SpPlayerConfig)
+
+Pass an optional `SpPlayerConfig` to the `VidgyorPlayer` initializer to customize video behavior, the on-screen controls, the logo, the error screen and analytics. Every field is optional: a value you set wins, and a field you leave `nil` falls back to the channel's configuration (where one exists) and then to the default listed below. Leaving out `playerConfig` keeps every default.
+
+```swift
+let playerConfig = SpPlayerConfig(
+    videoConfig: VideoConfig(autoPlay: true, repeatMode: .off),
+    overlayConfig: OverlayConfig(seekForwardIncrement: 10, showTitle: true),
+    logoConfig: LogoConfig(enable: true, logoUrl: "https://example.com/logo.png"),
+    errorConfig: ErrorConfig(retryTitle: "Try again")
+)
+
+vidgyorPlayer = VidgyorPlayer(
+    accountId: "ACCOUNT_ID",
+    channelId: "CHANNEL_ID",
+    config: .vod(vodConfig),
+    playerConfig: playerConfig
+)
+```
+
+**SpPlayerConfig**
+
+| Property | Type | Description |
+|---|---|---|
+| `videoConfig` | `VideoConfig` | Video behavior: scaling, autoplay, start position, rotation and repeat. |
+| `overlayConfig` | `OverlayConfig` | The on-screen controls. |
+| `logoConfig` | `LogoConfig` | A channel logo over live content. |
+| `analyticsConfig` | `AnalyticsConfig` | Analytics reporting. |
+| `errorConfig` | `ErrorConfig` | The error screen. |
+
+**VideoConfig**
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `resizeMode` | `VideoResizeMode?` | `.fit` | How the video fills the player: `.fit` (letterboxed), `.zoom` (fills and crops) or `.fill` (stretches). iOS only. |
+| `autoPlay` | `Bool?` | `true` | Start playback as soon as the video is ready. |
+| `startPositionMs` | `Int?` | `0` | Start position for the first VOD video, in milliseconds. Applies once, to the first video only; ignored for live. Use it to resume where a viewer left off: the SDK doesn't save positions, so store one yourself (for example from `onTimeUpdate`). |
+| `autoRotate` | `Bool?` | `true` | Enter full screen when the device rotates to landscape. iOS only. |
+| `repeatMode` | `RepeatMode?` | `.off` | What happens when a video ends: `.off`, `.one` or `.all`. VOD only. See [Repeat and Replay](#10-repeat-and-replay-vod). |
+
+**OverlayConfig**
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `autoHideDelay` | `TimeInterval?` | `3.0` | Seconds the controls stay visible before hiding. |
+| `qualityControl` | `Bool?` | `true` | Show the Quality row in Settings. |
+| `audioControl` | `Bool?` | `true` | Show the Audio row in Settings. |
+| `captionControl` | `Bool?` | `false` | Show the Subtitles row in Settings. |
+| `speedControl` | `Bool?` | `true` | Show the Playback Speed row in Settings (VOD only). |
+| `showLiveBadge` | `Bool?` | `true` | Show the LIVE / GO LIVE badge on live streams. |
+| `fullScreenControl` | `Bool?` | `true` | Show the full-screen button. iOS only; tvOS is always full screen. |
+| `seekForwardIncrement` | `TimeInterval?` | `15` | Skip-forward step, in seconds (VOD). |
+| `seekBackIncrement` | `TimeInterval?` | `5` | Skip-back step, in seconds (VOD). |
+| `liveEdgeThreshold` | `TimeInterval?` | `30` | Seconds behind the live edge before the badge changes to GO LIVE. |
+| `backgroundAlpha` | `CGFloat?` | `0.25` | Opacity of the dimming behind the controls, 0–1. |
+| `enableSettings` | `Bool?` | `true` | Master switch for Settings. `false` hides the Quality, Audio and Playback Speed rows. |
+| `showTitle` | `Bool?` | `true` | Show the content title at the top of the controls: `LiveConfig.title` for live, or the playing `VODItem`'s `title` for VOD, falling back to the channel's name. Hidden when blank and during ads. |
+
+**LogoConfig**
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `enable` | `Bool?` | `false` | Show the logo. |
+| `logoUrl` | `String?` | — | URL of the logo image. |
+| `contentMode` | `UIView.ContentMode` | `.scaleAspectFit` | How the image scales within its box. |
+| `widthPercentage` | `CGFloat?` | `0.25` | Logo width as a fraction of the player's width, 0–1. |
+| `heightPercentage` | `CGFloat?` | `0.12` | Logo height as a fraction of the player's height, 0–1. |
+| `horizontalBias` | `CGFloat?` | `1.0` | Horizontal position: 0 = left, 0.5 = center, 1 = right. |
+| `verticalBias` | `CGFloat?` | `0.0` | Vertical position: 0 = top, 0.5 = center, 1 = bottom. |
+
+The logo appears only on live content. It sits beneath the player controls and stays hidden for the whole of an ad break. Configure it here: since 1.7.0, `PlayerConfig.LiveConfig` no longer takes a `logoConfig`.
+
+**AnalyticsConfig**
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `customEnabled` | `Bool?` | `true` | Send playback analytics to Vidgyor. |
+| `firebaseEnabled` | `Bool?` | `true` | Present for parity with the Android SDK; has no effect on iOS or tvOS. |
+
+**ErrorConfig**
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `enabled` | `Bool?` | `true` | Show the SDK's error screen. See [Error Screen](#11-error-screen). |
+| `title` | `String?` | `"Something went wrong"` | Title for playback failures. |
+| `message` | `String?` | `"We couldn't play this video. Please try again."` | Message for playback failures. |
+| `retryTitle` | `String?` | `"Retry"` | Retry button label. |
+
+## 10. Repeat and Replay (VOD)
+
+`VideoConfig.repeatMode` sets what happens when a video ends. It applies to VOD only.
+
+| Mode | Behavior | `didFinishPlayingAllVideos()` |
+|---|---|---|
+| `.off` (default) | The list plays through once. At the end, the player shows a Replay screen. | Called at the end of the list |
+| `.one` | Loops the current video; a list never advances. | Never called |
+| `.all` | Loops the whole list; a single-video list loops that video. | Never called |
+
+The pre-roll ad plays at every content start in all three modes, including each loop.
+
+```swift
+let playerConfig = SpPlayerConfig(videoConfig: VideoConfig(repeatMode: .all))
+```
+
+To offer your own replay button, call `vidgyorPlayer?.replay()`. It restarts from the first video, including its pre-roll, and does nothing for live.
+
+## 11. Error Screen
+
+When the player can't load (for example, with no network or a configuration failure), or playback fails after the SDK's automatic recovery, the SDK shows an error screen with a title, a message and a Retry button. Ad failures never show it: the player continues with the content.
+
+```swift
+let playerConfig = SpPlayerConfig(
+    errorConfig: ErrorConfig(
+        title: "Playback problem",
+        message: "Please check your connection and try again.",
+        retryTitle: "Try again"
+    )
+)
+```
+
+Your title and message apply to playback failures; load failures use a specific title, such as "No Internet". To show your own error UI instead, pass `ErrorConfig(enabled: false)` and handle `didFailToLoadConfiguration(error:)` and `onPlayerError(error:)`, which are called either way.
+
+## 12. Diagnostic Logging
+
+Release builds of your app emit no SDK logs by default. To capture logs from a release build, for example on a device farm, turn on diagnostic logging before creating a player:
+
+```swift
+VidgyorPlayer.setDiagnosticLogging(enabled: true, mirrorToSyslog: true)
+```
+
+`mirrorToSyslog` also writes each line to the system log, which device-farm services capture. Lines look like `[Sp-Player:<Category>] <message>`. Use this for diagnosis only and ship with it off: the SDK logs a lot, and mirroring has a performance cost.
+
 ## 🧾 Summary
 | Player Type               | Config Type         |  Delegate                                      |
 |-------------------------|--------------|-----------|
 | `VOD` | `PlayerConfig.VODConfig` | `VidgyorVODPlayerDelegate` |
 | `Live` | `PlayerConfig.LiveConfig` | `VidgyorLivePlayerDelegate` |
 
-Both configurations share the same embedding workflow but differ in ad handling and playback source.
+Both configurations share the same `attach(to:)` workflow but differ in ad handling and playback source.
 
-Both player types work on **tvOS** and **iOS** with the same public API. Platform differences are limited to focus/gesture input handling and the `showOverlay`/`hideOverlay` delegate callbacks which are tvOS-only.
+Both player types work on **tvOS** and **iOS** with the same public API. Platform differences are limited to focus/gesture input handling, the `showOverlay`/`hideOverlay` delegate callbacks (tvOS only) and the `playerWillEnterFullScreen`/`playerWillExitFullScreen` callbacks (iOS only).
