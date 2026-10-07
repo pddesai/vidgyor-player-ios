@@ -69,9 +69,10 @@ After installation, verify both packages are added:
 
 The SDK is also available as the binary pod **`Vidgyor-Player`**, installed straight from this repository. **Google IMA is resolved automatically** — you do not add it yourself.
 
-> The pod is not published to the CocoaPods trunk: the trunk becomes read-only in December
-> 2026 and accepts no new versions after that. Point your `Podfile` at this repository and
-> the release tag instead, as below. Each release's tag is listed under **Releases**.
+> Point your `Podfile` at this repository and a release tag, as below. That works for every
+> release; each release's tag is listed under **Releases**. 1.7.0 is also on the CocoaPods
+> trunk (`pod 'Vidgyor-Player', '~> 1.7'`), but the trunk becomes read-only in December 2026
+> and will not receive later releases, so a trunk line stops getting updates there.
 
 #### Step 1: Add the pod
 

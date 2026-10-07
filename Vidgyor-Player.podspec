@@ -1,8 +1,9 @@
 #
 # Vidgyor-Player.podspec — binary-only CocoaPods distribution of the Vidgyor SDK.
 #
-# Installed straight from this repository, not from the CocoaPods trunk (which becomes
-# read-only on 2026-12-02, after which it accepts no new versions):
+# Installed straight from this repository. 1.7.0 was also pushed to the CocoaPods trunk with
+# this file as is, but the trunk becomes read-only on 2026-12-02 and takes no later versions,
+# so the documented install is:
 #
 #   pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.7.0'
 #

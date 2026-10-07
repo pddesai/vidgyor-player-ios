@@ -11,9 +11,10 @@ This is the last release to the previous repository.
 
 - **SPM:** remove the old package and add `https://github.com/pddesai/vidgyor-player-ios.git`.
   The product and `import Vidgyor` are unchanged.
-- **CocoaPods:** the pod is no longer published to the CocoaPods trunk, which becomes read-only
-  in December 2026. Install from the repository instead:
-  `pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.7.0'`
+- **CocoaPods:** install from the repository:
+  `pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.7.0'`.
+  1.7.0 is also on the CocoaPods trunk, but the trunk becomes read-only in December 2026, so
+  later releases will be published only in the repository.
 - Upgrading from 1.6.3 also brings everything in 1.6.5, including the bundled privacy manifest.
 
 ### Breaking
