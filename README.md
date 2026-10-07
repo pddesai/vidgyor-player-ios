@@ -174,6 +174,7 @@ import Vidgyor
 * Repeat and Replay (VOD)
 * Error Screen
 * Diagnostic Logging
+* Full-Screen Playback (iOS)
 
 
 ## 1. Global Player Instance
@@ -856,6 +857,7 @@ private func dismissChannelGuide() {
 On iOS, the player responds to touch gestures automatically. No additional setup is required on your part:
 
 - **Swipe up / Swipe down** — triggers the `didRequestFocusMove` delegate callback with `.up` or `.down` direction
+- **Rotate to landscape / full-screen button** — plays full screen in landscape. Your app must allow landscape; see [Full-Screen Playback (iOS)](#13-full-screen-playback-ios)
 - **Tap** — shows or hides the player controls; play and pause with the center button. While an ad is playing, touches go to the ad (for example its Skip button)
 - **Dismiss button** — shown in the top-left corner only with the deprecated `embed(in:)`, where it calls `vidgyorPlayer?.dismiss()`. With `attach(to:)`, add your own close control
 
@@ -904,6 +906,7 @@ Unlike tvOS, there is no need to call `setPlayerFocusEnabled` or `restoreFocusTo
 * Always dismiss player before switching between VOD and Live modes.
 * With `repeatMode` `.off` (the default), the SDK shows a Replay screen at the end of a VOD list. Dismiss in `didFinishPlayingAllVideos()` only if you'd rather close the player.
 * Don't ship with diagnostic logging turned on.
+* **On iOS, allow a landscape orientation.** Full screen is landscape-only, and an app that doesn't permit landscape crashes when it starts. See [Full-Screen Playback (iOS)](#13-full-screen-playback-ios).
 * **For custom overlays on tvOS:**
   * Disable player focus with `setPlayerFocusEnabled(false)` before showing UI
   * Restore focus with `restoreFocusToPlayer()` when dismissing UI
@@ -1016,7 +1019,7 @@ vidgyorPlayer = VidgyorPlayer(
 | `resizeMode` | `VideoResizeMode?` | `.fit` | How the video fills the player: `.fit` (letterboxed), `.zoom` (fills and crops) or `.fill` (stretches). iOS only. |
 | `autoPlay` | `Bool?` | `true` | Start playback as soon as the video is ready. |
 | `startPositionMs` | `Int?` | `0` | Start position for the first VOD video, in milliseconds. Applies once, to the first video only; ignored for live. Use it to resume where a viewer left off: the SDK doesn't save positions, so store one yourself (for example from `onTimeUpdate`). |
-| `autoRotate` | `Bool?` | `true` | Enter full screen when the device rotates to landscape. iOS only. |
+| `autoRotate` | `Bool?` | `true` | Enter full screen when the device rotates to landscape. iOS only. See [Full-Screen Playback](#13-full-screen-playback-ios). |
 | `repeatMode` | `RepeatMode?` | `.off` | What happens when a video ends: `.off`, `.one` or `.all`. VOD only. See [Repeat and Replay](#10-repeat-and-replay-vod). |
 
 **OverlayConfig**
@@ -1110,6 +1113,38 @@ VidgyorPlayer.setDiagnosticLogging(enabled: true, mirrorToSyslog: true)
 ```
 
 `mirrorToSyslog` also writes each line to the system log, which device-farm services capture. Lines look like `[Sp-Player:<Category>] <message>`. Use this for diagnosis only and ship with it off: the SDK logs a lot, and mirroring has a performance cost.
+
+## 13. Full-Screen Playback (iOS)
+
+On iOS the player goes full screen, in landscape, when:
+
+- the device rotates to landscape (turn this off with `VideoConfig(autoRotate: false)`), or
+- the viewer taps the full-screen button (hide it with `OverlayConfig(fullScreenControl: false)`).
+
+Playback continues across the transition. To leave full screen, the viewer taps the full-screen button again or, if full screen began by rotating the device, rotates back to portrait. On tvOS the player is always full screen.
+
+> **Your app must allow landscape, or it crashes.** The SDK presents full screen in a landscape-only view controller. If your app doesn't support a landscape orientation, iOS throws `UIApplicationInvalidInterfaceOrientationException` when full screen starts. The simplest fix, which the sample apps use: in your app target's **General → Deployment Info**, tick **Landscape Left** and **Landscape Right** for iPhone (the `UISupportedInterfaceOrientations` key in Info.plist).
+
+If the rest of your app is portrait-only, you can instead allow landscape only while the player is full screen: return a landscape-capable mask from `application(_:supportedInterfaceOrientationsFor:)` after `playerWillEnterFullScreen()` is called, and restore your normal mask in `playerWillExitFullScreen()`.
+
+### Full-Screen Callbacks (iOS only)
+
+Both are optional methods on `VidgyorVODPlayerDelegate` and `VidgyorLivePlayerDelegate`, with default empty implementations.
+
+```swift
+func playerWillEnterFullScreen() {
+    // Called just before the player goes full screen.
+}
+
+func playerWillExitFullScreen() {
+    // Called when the player leaves full screen, however the viewer left it.
+}
+```
+
+| Method | Description |
+|---|---|
+| `playerWillEnterFullScreen()` | Called just before the player goes full screen. Allow landscape here if your app doesn't already. |
+| `playerWillExitFullScreen()` | Called once each time the player leaves full screen, whichever way the viewer left it. Restore your orientation policy here. |
 
 ## 🧾 Summary
 | Player Type               | Config Type         |  Delegate                                      |
