@@ -3,6 +3,15 @@
 All notable changes to the Vidgyor SDK are documented here. This project follows
 [Semantic Versioning](https://semver.org): `MAJOR.MINOR.PATCH`, tagged `vX.Y.Z` on `main`.
 
+## [Unreleased]
+
+### Compatibility
+- **CocoaPods:** the pod now requires Google IMA **iOS 3.33+** and **tvOS 4.17+** (`~> 3.33` /
+  `~> 4.17`, up from `~> 3.30` / `~> 4.16`), the versions the SDK is built and tested with. If
+  your `Podfile.lock` holds an older IMA and `pod install` reports a conflict, run
+  `pod update GoogleAds-IMA-iOS-SDK` (or `GoogleAds-IMA-tvOS-SDK`). SPM is unaffected: you add
+  IMA yourself, at the versions the README lists.
+
 ## [1.7.0] - 2026-10-07
 
 **New home: [github.com/pddesai/vidgyor-player-ios](https://github.com/pddesai/vidgyor-player-ios).**

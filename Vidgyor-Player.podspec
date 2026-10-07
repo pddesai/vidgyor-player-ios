@@ -46,8 +46,9 @@ Pod::Spec.new do |s|
   # Not optional: the public .swiftinterface inside the xcframework carries
   # `import GoogleInteractiveMediaAds`, so the module must resolve at consumer compile
   # time, not just at link time. Both pods vend the same `GoogleInteractiveMediaAds` module.
-  s.ios.dependency  'GoogleAds-IMA-iOS-SDK',  '~> 3.30'
-  s.tvos.dependency 'GoogleAds-IMA-tvOS-SDK', '~> 4.16'
+  # Minimums are the versions the SDK is built and tested with.
+  s.ios.dependency  'GoogleAds-IMA-iOS-SDK',  '~> 3.33'
+  s.tvos.dependency 'GoogleAds-IMA-tvOS-SDK', '~> 4.17'
 
   s.frameworks = 'AVFoundation', 'AVKit', 'CoreMedia', 'UIKit', 'Foundation'
 end
