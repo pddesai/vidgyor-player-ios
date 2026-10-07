@@ -282,9 +282,10 @@ override func viewDidLoad() {
 
 * The `SpPlayerView` **must already be in a view-controller hierarchy** when you call `attach(to:)` — the SDK finds the owning view controller from the responder chain.
 * Attaching automatically starts playback for VOD content.
-* **iOS only:** A dismiss button is displayed automatically in the top-left corner of the player.
+* With `attach(to:)` the SDK shows **no dismiss button** — your app owns the layout, so add your own close
+  control and call `vidgyorPlayer?.dismiss()` from it.
 
-> **Migrating from `embed(in:)`?** The legacy `embed(in:)` / `embed(into:in:)` methods still work (see [Player Lifecycle](#6-player-lifecycle)) — they now create an `SpPlayerView` for you under the hood. New integrations should prefer `attach(to:)`.
+> **Migrating from `embed(in:)`?** `embed(in:)` and `embed(into:in:)` are **deprecated**: they still work, with a compiler warning, and will be removed in a future release. They create an `SpPlayerView` for you, and on iOS `embed(in:)` also shows the SDK's own dismiss button in the top-left corner. Move to `attach(to:)`.
 
 ### Step 5: Conform to VidgyorVODPlayerDelegate
 
@@ -299,7 +300,8 @@ extension MyViewController: VidgyorVODPlayerDelegate {
         presentAlert(title: "Error", message: error)
     }
 
-    // Triggered when all VOD items finish playing
+    // Triggered when all VOD items finish playing. The SDK is showing its Replay
+    // screen at this point; dismissing here closes the player instead.
     func didFinishPlayingAllVideos() {
         vidgyorPlayer?.dismiss()
     }
@@ -371,7 +373,7 @@ extension MyViewController: VidgyorVODPlayerDelegate {
 | Method               | Description         |
 |-------------------------|--------------|
 | `didFailToLoadConfiguration(error:)` | Triggered when SDK fails to initialize. |
-| `didFinishPlayingAllVideos()` | Triggered when all VOD items finish playing. Use to call `vidgyorPlayer?.dismiss()`. |
+| `didFinishPlayingAllVideos()` | Triggered when all VOD items finish playing. The SDK shows a Replay screen at the same time; call `vidgyorPlayer?.dismiss()` here if you'd rather close the player. |
 
 
 ## 3. Live Player Integration
@@ -435,8 +437,9 @@ override func viewDidLoad() {
 ```
 
 * Attaching automatically starts the live stream playback.
-* **iOS only:** A dismiss button is displayed automatically in the top-left corner of the player.
-* `embed(in:)` remains available for existing integrations (see [Player Lifecycle](#6-player-lifecycle)).
+* With `attach(to:)` the SDK shows **no dismiss button** — your app owns the layout, so add your own close
+  control and call `vidgyorPlayer?.dismiss()` from it.
+* `embed(in:)` still works but is deprecated (see [Player Lifecycle](#6-player-lifecycle)).
 
 ### Step 4: Implement VidgyorLivePlayerDelegate
 ```swift
@@ -848,8 +851,8 @@ private func dismissChannelGuide() {
 On iOS, the player responds to touch gestures automatically. No additional setup is required on your part:
 
 - **Swipe up / Swipe down** — triggers the `didRequestFocusMove` delegate callback with `.up` or `.down` direction
-- **Tap** — toggles play/pause (tap is automatically suppressed during ad playback so the IMA skip button can receive touches)
-- **Dismiss button** — a dismiss button is shown in the top-left corner of the player and calls `vidgyorPlayer?.dismiss()` automatically
+- **Tap** — shows or hides the player controls; play and pause with the center button. While an ad is playing, touches go to the ad (for example its Skip button)
+- **Dismiss button** — shown in the top-left corner only with the deprecated `embed(in:)`, where it calls `vidgyorPlayer?.dismiss()`. With `attach(to:)`, add your own close control
 
 ### Handling Focus Move Callbacks
 
@@ -877,11 +880,12 @@ Unlike tvOS, there is no need to call `setPlayerFocusEnabled` or `restoreFocusTo
 | Action               | Method         |  Description                                      | Platform |
 |-------------------------|--------------|-----------|---|
 | Attach player | `vidgyorPlayer?.attach(to: playerView)` | Attaches the player to an `SpPlayerView` you created and starts playback. **Preferred.** | Both |
-| Embed player (legacy) | `vidgyorPlayer?.embed(in: parentVC)` / `embed(into:in:)` | Backward-compatible shim; the SDK creates the `SpPlayerView` for you. | Both |
+| Embed player (deprecated) | `vidgyorPlayer?.embed(in: parentVC)` / `embed(into:in:)` | Backward-compatible shim; the SDK creates the `SpPlayerView` for you. Deprecated: use `attach(to:)`. | Both |
 | Dismiss player | `vidgyorPlayer?.dismiss()` | Removes player and frees resources. | Both |
 | Disable player focus | `vidgyorPlayer?.setPlayerFocusEnabled(false)` | Prevents player from receiving focus (for custom overlays). | tvOS only |
 | Restore player focus | `vidgyorPlayer?.restoreFocusToPlayer()` | Re-enables focus and returns focus to player. | tvOS only |
-| Handle errors | `didFailToLoadConfiguration(error:)` | Called on load or playback failure. | Both |
+| Handle load errors | `didFailToLoadConfiguration(error:)` | The player couldn't load (for example, a configuration or network failure). | Both |
+| Handle playback errors | `onPlayerError(error:)` | Playback failed after the SDK's automatic recovery gave up. | Both |
 | Track ads | `isAdStart(value:), isAdEnd(value:), adError()` | Use for ad analytics and tracking. | Both |
 
 ## 7. Best Practices
