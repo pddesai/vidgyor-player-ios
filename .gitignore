@@ -1,0 +1,13 @@
+# macOS
+.DS_Store
+
+# Xcode / SwiftPM per-user state (never commit)
+.swiftpm/xcode/**/xcuserdata/
+.swiftpm/xcode/package.xcworkspace/xcuserdata/
+**/xcuserdata/
+*.xcuserstate
+xcuserdata/
+
+# SwiftPM build products
+.build/
+Package.resolved.user
