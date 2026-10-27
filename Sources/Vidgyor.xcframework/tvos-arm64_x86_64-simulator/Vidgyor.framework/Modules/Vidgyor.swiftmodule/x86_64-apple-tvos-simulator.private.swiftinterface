@@ -19,12 +19,56 @@ public struct AnalyticsConfig {
   public var firebaseEnabled: Swift::Bool?
   public init(customEnabled: Swift::Bool? = nil, firebaseEnabled: Swift::Bool? = nil)
 }
+public struct DRMConfig : Swift::Sendable, Swift::CustomStringConvertible {
+  public enum Certificate : Swift::Sendable {
+    case url(Foundation::URL)
+    case data(Foundation::Data)
+    case licenseServer
+  }
+  public enum LicenseRequestFormat : Swift::String, Swift::Sendable {
+    case rawSPC
+    case base64Form
+    case json
+    public init?(rawValue: Swift::String)
+    public typealias RawValue = Swift::String
+    public var rawValue: Swift::String {
+      get
+    }
+  }
+  public enum ContentIdentifier : Swift::String, Swift::Sendable {
+    case afterScheme
+    case fullURI
+    public init?(rawValue: Swift::String)
+    public typealias RawValue = Swift::String
+    public var rawValue: Swift::String {
+      get
+    }
+  }
+  public let certificate: Vidgyor::DRMConfig.Vidgyor::Certificate
+  public let licenseRequestHeaders: [Swift::String : Swift::String]
+  public let tokenRequestHeaders: [Swift::String : Swift::String]
+  public var licenseRequestFormat: Vidgyor::DRMConfig.Vidgyor::LicenseRequestFormat
+  public var contentIdentifier: Vidgyor::DRMConfig.Vidgyor::ContentIdentifier
+  public var licenseURL: Foundation::URL? {
+    get
+  }
+  public var licenseTokenURL: Foundation::URL? {
+    get
+  }
+  public static func fairPlay(certificate: Vidgyor::DRMConfig.Vidgyor::Certificate, licenseURL: Foundation::URL, licenseRequestHeaders: [Swift::String : Swift::String] = [:]) -> Vidgyor::DRMConfig
+  public static func fairPlay(certificate: Vidgyor::DRMConfig.Vidgyor::Certificate, licenseTokenURL: Foundation::URL, tokenRequestHeaders: [Swift::String : Swift::String] = [:], licenseRequestHeaders: [Swift::String : Swift::String] = [:]) -> Vidgyor::DRMConfig
+  public var description: Swift::String {
+    get
+  }
+}
 public struct ErrorConfig {
   public var enabled: Swift::Bool?
   public var title: Swift::String?
   public var message: Swift::String?
   public var retryTitle: Swift::String?
-  public init(enabled: Swift::Bool? = nil, title: Swift::String? = nil, message: Swift::String? = nil, retryTitle: Swift::String? = nil)
+  public var drmTitle: Swift::String?
+  public var drmMessage: Swift::String?
+  public init(enabled: Swift::Bool? = nil, title: Swift::String? = nil, message: Swift::String? = nil, retryTitle: Swift::String? = nil, drmTitle: Swift::String? = nil, drmMessage: Swift::String? = nil)
 }
 public struct LogoConfig {
   public var enable: Swift::Bool?
@@ -58,12 +102,13 @@ public enum PlayerConfig {
   public struct LiveConfig {
     public let title: Swift::String?
     public let livetvUrl: Swift::String?
+    public let drmConfig: Vidgyor::DRMConfig?
     public let prerollAdTag: Swift::String?
     public let disablePrerollAdTags: Swift::Bool
     public let disableMidrollAdTags: Swift::Bool
     public let midrollAdTags: [Swift::String]
     public let delegate: any Vidgyor::VidgyorLivePlayerDelegate
-    public init(title: Swift::String? = nil, livetvUrl: Swift::String? = nil, prerollAdTag: Swift::String? = nil, disablePrerollAdTags: Swift::Bool = false, disableMidrollAdTags: Swift::Bool = false, midrollAdTags: [Swift::String] = [], delegate: any Vidgyor::VidgyorLivePlayerDelegate)
+    public init(title: Swift::String? = nil, livetvUrl: Swift::String? = nil, drmConfig: Vidgyor::DRMConfig? = nil, prerollAdTag: Swift::String? = nil, disablePrerollAdTags: Swift::Bool = false, disableMidrollAdTags: Swift::Bool = false, midrollAdTags: [Swift::String] = [], delegate: any Vidgyor::VidgyorLivePlayerDelegate)
     @available(*, deprecated, renamed: "title")
     public var channelName: Swift::String? {
       get
@@ -126,6 +171,7 @@ public protocol VidgyorPlayerDelegate : AnyObject {
   func isAdSkip(value: Swift::Bool)
   func adError()
   func onPlayerError(error: Swift::String)
+  func onPlaybackError(_ error: Vidgyor::VidgyorPlaybackError)
   func onPlaybackRecoveryStarted()
   func onPlaybackRecovered()
   func didRequestFocusMove(_ direction: Vidgyor::PlayerFocusDirection)
@@ -140,6 +186,7 @@ extension Vidgyor::VidgyorPlayerDelegate {
   public func isAdSkip(value: Swift::Bool)
   public func adError()
   public func onPlayerError(error: Swift::String)
+  public func onPlaybackError(_ error: Vidgyor::VidgyorPlaybackError)
   public func onPlaybackRecoveryStarted()
   public func onPlaybackRecovered()
   public func didRequestFocusMove(_ direction: Vidgyor::PlayerFocusDirection)
@@ -177,6 +224,26 @@ extension Vidgyor::VidgyorLivePlayerDelegate {
   public func getLiveUrl(str: Swift::String)
   public func isAdPlayingCallback(isPlaying: Swift::Bool)
 }
+public struct VidgyorPlaybackError : Swift::Error, Swift::Sendable, Swift::CustomStringConvertible {
+  public struct Category : Swift::RawRepresentable, Swift::Hashable, Swift::Sendable, Swift::CustomStringConvertible {
+    public let rawValue: Swift::String
+    public init(rawValue: Swift::String)
+    public static let drm: Vidgyor::VidgyorPlaybackError.Vidgyor::Category
+    public static let network: Vidgyor::VidgyorPlaybackError.Vidgyor::Category
+    public static let source: Vidgyor::VidgyorPlaybackError.Vidgyor::Category
+    public static let unknown: Vidgyor::VidgyorPlaybackError.Vidgyor::Category
+    public var description: Swift::String {
+      get
+    }
+    public typealias RawValue = Swift::String
+  }
+  public let category: Vidgyor::VidgyorPlaybackError.Vidgyor::Category
+  public let code: Swift::Int
+  public let message: Swift::String
+  public var description: Swift::String {
+    get
+  }
+}
 public enum VidgyorPlayerError : Foundation::LocalizedError {
   case channelNotFound(channelId: Swift::String)
   case invalidVideoURL
@@ -208,8 +275,9 @@ public struct VODItem : Vidgyor::PlayableItem, Vidgyor::PlayerIdentifiable {
   public let thumbnailUrl: Swift::String?
   public let title: Swift::String?
   public let videoId: Swift::String?
-  public init(videoUrl: Swift::String, thumbnailUrl: Swift::String? = nil, title: Swift::String? = nil, videoId: Swift::String? = nil)
-  @available(*, deprecated, renamed: "init(videoUrl:thumbnailUrl:title:videoId:)")
+  public let drmConfig: Vidgyor::DRMConfig?
+  public init(videoUrl: Swift::String, thumbnailUrl: Swift::String? = nil, title: Swift::String? = nil, videoId: Swift::String? = nil, drmConfig: Vidgyor::DRMConfig? = nil)
+  @available(*, deprecated, renamed: "init(videoUrl:thumbnailUrl:title:videoId:drmConfig:)")
   public init(videoUrl: Swift::String, thumbnailUrl: Swift::String? = nil, videoTitle: Swift::String?, videoId: Swift::String? = nil)
 }
 public struct LiveItem : Vidgyor::PlayableItem {
@@ -334,6 +402,12 @@ extension Vidgyor::VidgyorPlayer {
   final public func embed(in containerViewController: UIKit::UIViewController)
   final public func dismiss()
 }
+extension Vidgyor::DRMConfig.Vidgyor::LicenseRequestFormat : Swift::Equatable {}
+extension Vidgyor::DRMConfig.Vidgyor::LicenseRequestFormat : Swift::Hashable {}
+extension Vidgyor::DRMConfig.Vidgyor::LicenseRequestFormat : Swift::RawRepresentable {}
+extension Vidgyor::DRMConfig.Vidgyor::ContentIdentifier : Swift::Equatable {}
+extension Vidgyor::DRMConfig.Vidgyor::ContentIdentifier : Swift::Hashable {}
+extension Vidgyor::DRMConfig.Vidgyor::ContentIdentifier : Swift::RawRepresentable {}
 extension Vidgyor::VideoResizeMode : Swift::Equatable {}
 extension Vidgyor::VideoResizeMode : Swift::Hashable {}
 extension Vidgyor::RepeatMode : Swift::Equatable {}
