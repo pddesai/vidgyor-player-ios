@@ -5,12 +5,70 @@ All notable changes to the Vidgyor SDK are documented here. This project follows
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-10-27
+
+### CocoaPods: the last trunk release
+- **1.8.x is the last Vidgyor-Player line on the CocoaPods trunk.** CocoaPods makes its trunk
+  read-only on **2 December 2026** ([announcement](https://blog.cocoapods.org/CocoaPods-Specs-Repo/)),
+  so `pod 'Vidgyor-Player', '~> 1.8'` from the trunk gets no updates after that date, and the
+  trunk pod will be marked deprecated. Every release, including all later ones, is published in
+  this repository: use Swift Package Manager (recommended) or
+  `pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'vX.Y.Z'`.
+
+### Added
+- **FairPlay DRM** for live and VOD HLS streams. Pass a `DRMConfig` with `LiveConfig(drmConfig:)`
+  or `VODItem(drmConfig:)`, or configure it per channel (`live_drm` / `vod_drm`); settings in the
+  app win. The license comes from a fixed URL (`DRMConfig.fairPlay(certificate:licenseURL:)`) or
+  from a URL that a token endpoint issues for each request
+  (`fairPlay(certificate:licenseTokenURL:)`). FairPlay doesn't run in the Simulator: protected
+  streams there fail with error 6001. See the README's "Protected Streams (FairPlay DRM)".
+- **`onPlaybackError(_:)`** on `VidgyorVODPlayerDelegate` and `VidgyorLivePlayerDelegate`, with a
+  typed `VidgyorPlaybackError` (`category`, `code`, `message`). Optional: it has a default
+  implementation.
+- DRM error codes, as on Android: 6001 (this device can't play protected video), 6003 (encrypted
+  stream without DRM settings), 6004 (playback rights couldn't be obtained — offline, not
+  authorised, or other), 6006 (protected playback couldn't be set up). `ErrorConfig.drmTitle` /
+  `drmMessage` change the DRM error screen's text.
+
+### Changed
+- **New player controls, matching the Android SDK**, on iOS and tvOS: the title at the top left;
+  rewind, play/pause and forward in the centre; a full-width seek bar that also shows buffered
+  content; position and duration at the bottom left; the LIVE badge, settings and full-screen
+  buttons at the bottom right. The settings popup lists Speed (now from 0.25x), Audio, Subtitles
+  and Quality. On tvOS the focus look matches Android TV, and the seek bar can be focused and
+  scrubbed with the remote.
+- **`OverlayConfig.backgroundAlpha`** now works as on Android — the strength of the controls'
+  40% dim — and defaults to **0.8** (was 0.25). If your app sets 0.25, the dim is now much
+  lighter: remove the setting for the default look.
+- While the settings popup is open, swipes scroll the popup instead of reaching the app.
+- iOS: the system Live Text button no longer covers the full-screen button on a paused video.
+- **Logging, as in the Android SDK:** one line per event, `[Component] message`, under the
+  subsystem `SP-Player` (was `Sp-Player`), **in every build including release**. Filter on
+  `subsystem == "SP-Player"` and a component (`Player`, `Playback`, `Ads`, `Midroll`, `Polling`,
+  `SCTE`, `DRM`, `Analytics`, `Network`, `UI`, `Perf`). Work that repeats on a timer no longer logs
+  every few seconds. `setDiagnosticLogging(enabled: false)` silences the SDK; mirrored syslog
+  lines read `SP-Player I [Ads] …`. An ad's `Loaded` line names its creative, and the reason IMA
+  drops an ad is logged.
+- An ad that hasn't started is now given up after 9 seconds (was 8).
+
+### Fixed
+- A mid-roll ad pod no longer loses all its ads when one ad's video doesn't load in time: the next
+  ad in the pod plays.
+- SCTE-35 mid-rolls signalled with `#EXT-X-CUE-OUT` start when the viewer reaches the cue, instead
+  of up to ~40 seconds early.
+- A VOD pre-roll that stalled before starting no longer resumes later over the playing video.
+- A content failure that happened while an ad was on screen left a frozen black screen after the
+  ad. It is now handled when content resumes (a retry, or the error screen), and reported once.
+
 ### Compatibility
+- Source-compatible with 1.7.0: every API change adds a type, a method or a parameter with a
+  default.
 - **CocoaPods:** the pod now requires Google IMA **iOS 3.33+** and **tvOS 4.17+** (`~> 3.33` /
   `~> 4.17`, up from `~> 3.30` / `~> 4.16`), the versions the SDK is built and tested with. If
   your `Podfile.lock` holds an older IMA and `pod install` reports a conflict, run
   `pod update GoogleAds-IMA-iOS-SDK` (or `GoogleAds-IMA-tvOS-SDK`). SPM is unaffected: you add
   IMA yourself, at the versions the README lists.
+- Built with Xcode 27.0 (Swift 6.4).
 
 ## [1.7.0] - 2026-10-07
 

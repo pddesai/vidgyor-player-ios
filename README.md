@@ -69,10 +69,14 @@ After installation, verify both packages are added:
 
 The SDK is also available as the binary pod **`Vidgyor-Player`**, installed straight from this repository. **Google IMA is resolved automatically** — you do not add it yourself.
 
-> Point your `Podfile` at this repository and a release tag, as below. That works for every
-> release; each release's tag is listed under **Releases**. 1.7.0 is also on the CocoaPods
-> trunk (`pod 'Vidgyor-Player', '~> 1.7'`), but the trunk becomes read-only in December 2026
-> and will not receive later releases, so a trunk line stops getting updates there.
+> **⚠️ CocoaPods trunk: no updates after 2 December 2026.** CocoaPods is making its central
+> repository (the trunk) read-only on **2 December 2026**, after which it accepts no new versions
+> ([announcement](https://blog.cocoapods.org/CocoaPods-Specs-Repo/)). **1.8.x is the last line
+> published there**, so `pod 'Vidgyor-Player', '~> 1.8'` from the trunk gets no updates after that
+> date, and the trunk pod is marked deprecated. Every release, including all later ones, is
+> published in this repository: point your `Podfile` at this repository and a release tag, as
+> below (each release's tag is listed under **Releases**), or use Swift Package Manager
+> (recommended).
 
 #### Step 1: Add the pod
 
@@ -83,7 +87,7 @@ platform :ios, '16.0'      # or: platform :tvos, '15.0'
 use_frameworks!
 
 target 'YourApp' do
-  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.7.0'
+  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.0'
 end
 ```
 
@@ -94,12 +98,12 @@ use_frameworks!
 
 target 'YourApp-iOS' do
   platform :ios, '16.0'
-  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.7.0'
+  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.0'
 end
 
 target 'YourApp-tvOS' do
   platform :tvos, '15.0'
-  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.7.0'
+  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.0'
 end
 ```
 
@@ -175,6 +179,7 @@ import Vidgyor
 * Error Screen
 * Diagnostic Logging
 * Full-Screen Playback (iOS)
+* Protected Streams (FairPlay DRM)
 
 
 ## 1. Global Player Instance
@@ -208,6 +213,7 @@ let vodItems = [vodItem]
 | `thumbnailUrl` | `String?`| ❌        | Thumbnail image URL.                 |
 | `title`        | `String?`| ❌        | Video title.                         |
 | `videoId`      | `String?`| ❌        | Unique identifier for analytics.     |
+| `drmConfig`    | `DRMConfig?` | ❌    | FairPlay settings for a protected video. `nil` uses the channel's `vod_drm` configuration, if any. See [Protected Streams](#14-protected-streams-fairplay-drm). |
 
 
 ### Step 2: Create VOD Configuration
@@ -333,6 +339,9 @@ extension MyViewController: VidgyorVODPlayerDelegate {
     // Called when player errors occur
     func onPlayerError(error: String) {}
 
+    // The same failure as a typed error: category (.drm, .network, .source, .unknown), code and message
+    func onPlaybackError(_ error: VidgyorPlaybackError) {}
+
     // Called when content starts playing
     func notifyPlay() {}
 
@@ -402,6 +411,7 @@ let liveConfig = PlayerConfig.LiveConfig(
 |-------------------------|--------------|-----------|--------------------------------------------------|
 | `title`                 | `String?`    | ❌        | Title shown at the top of the controls; `nil` uses the channel name. (Was `channelName`.) |
 | `livetvUrl`             | `String?`    | ❌        | Custom live stream URL (optional).               |
+| `drmConfig`             | `DRMConfig?` | ❌        | FairPlay settings for a protected stream. `nil` uses the channel's `live_drm` configuration, if any. See [Protected Streams](#14-protected-streams-fairplay-drm). |
 | `prerollAdTag`          | `String?`    | ❌        | Override preroll ad tag URL.                     |
 | `disablePrerollAdTags`  | `Bool`       | ❌        | `true` turns off live pre-roll ads. The default, `false`, leaves it to the channel's configuration. |
 | `disableMidrollAdTags`  | `Bool`       | ❌        | `true` turns off live mid-roll ads. The default, `false`, leaves it to the channel's configuration. |
@@ -482,6 +492,10 @@ extension MyViewController: VidgyorLivePlayerDelegate {
 
     // Called when the live stream URL is retrieved
     func getLiveUrl(str: String) {}
+
+    // Called when playback fails after the SDK's automatic recovery, as a typed error:
+    // category (.drm, .network, .source, .unknown), code and message
+    func onPlaybackError(_ error: VidgyorPlaybackError) {}
 
     // Called when an ad starts playing
     func isAdStart(value: Bool) {}
@@ -890,11 +904,12 @@ Unlike tvOS, there is no need to call `setPlayerFocusEnabled` or `restoreFocusTo
 | Embed player (deprecated) | `vidgyorPlayer?.embed(in: parentVC)` / `embed(into:in:)` | Backward-compatible shim; the SDK creates the `SpPlayerView` for you. Deprecated: use `attach(to:)`. | Both |
 | Dismiss player | `vidgyorPlayer?.dismiss()` | Removes player and frees resources. | Both |
 | Replay (VOD) | `vidgyorPlayer?.replay()` | Restarts from the first video, including its pre-roll. No effect for live. See [Repeat and Replay](#10-repeat-and-replay-vod). | Both |
-| Diagnostic logging | `VidgyorPlayer.setDiagnosticLogging(enabled:mirrorToSyslog:)` | Turns on SDK logs in a release build. Call before creating a player. See [Diagnostic Logging](#12-diagnostic-logging). | Both |
+| Diagnostic logging | `VidgyorPlayer.setDiagnosticLogging(enabled:mirrorToSyslog:)` | The SDK logs in every build by default; `enabled: false` turns it off, `mirrorToSyslog: true` copies lines to the system log. Call before creating a player. See [Diagnostic Logging](#12-diagnostic-logging). | Both |
 | Disable player focus | `vidgyorPlayer?.setPlayerFocusEnabled(false)` | Prevents player from receiving focus (for custom overlays). | tvOS only |
 | Restore player focus | `vidgyorPlayer?.restoreFocusToPlayer()` | Re-enables focus and returns focus to player. | tvOS only |
 | Handle load errors | `didFailToLoadConfiguration(error:)` | The player couldn't load (for example, a configuration or network failure). | Both |
 | Handle playback errors | `onPlayerError(error:)` | Playback failed after the SDK's automatic recovery gave up. | Both |
+| Handle typed playback errors | `onPlaybackError(_:)` | The same failure as a `VidgyorPlaybackError` (`category`, `code`, `message`), for example DRM code 6004. Optional. | Both |
 | Track ads | `isAdStart(value:), isAdEnd(value:), adError()` | Use for ad analytics and tracking. | Both |
 
 ## 7. Best Practices
@@ -1030,14 +1045,14 @@ vidgyorPlayer = VidgyorPlayer(
 | `qualityControl` | `Bool?` | `true` | Show the Quality row in Settings. |
 | `audioControl` | `Bool?` | `true` | Show the Audio row in Settings. |
 | `captionControl` | `Bool?` | `false` | Show the Subtitles row in Settings. |
-| `speedControl` | `Bool?` | `true` | Show the Playback Speed row in Settings (VOD only). |
+| `speedControl` | `Bool?` | `true` | Show the Speed row in Settings (VOD only). |
 | `showLiveBadge` | `Bool?` | `true` | Show the LIVE / GO LIVE badge on live streams. |
 | `fullScreenControl` | `Bool?` | `true` | Show the full-screen button. iOS only; tvOS is always full screen. |
 | `seekForwardIncrement` | `TimeInterval?` | `15` | Skip-forward step, in seconds (VOD). |
 | `seekBackIncrement` | `TimeInterval?` | `5` | Skip-back step, in seconds (VOD). |
 | `liveEdgeThreshold` | `TimeInterval?` | `30` | Seconds behind the live edge before the badge changes to GO LIVE. |
-| `backgroundAlpha` | `CGFloat?` | `0.25` | Opacity of the dimming behind the controls, 0–1. |
-| `enableSettings` | `Bool?` | `true` | Master switch for Settings. `false` hides the Quality, Audio and Playback Speed rows. |
+| `backgroundAlpha` | `CGFloat?` | `0.8` | Strength of the dim behind the controls, 0–1, as on Android: the dim is 40% black over the whole player, drawn at this opacity (the default gives a 32% dim). Before 1.8.0 this was the dim's own opacity, with a default of 0.25. |
+| `enableSettings` | `Bool?` | `true` | Master switch for Settings. `false` hides the Quality, Audio and Speed rows. |
 | `showTitle` | `Bool?` | `true` | Show the content title at the top of the controls: `LiveConfig.title` for live, or the playing `VODItem`'s `title` for VOD, falling back to the channel's name. Hidden when blank and during ads. |
 
 **LogoConfig**
@@ -1069,6 +1084,8 @@ The logo appears only on live content. It sits beneath the player controls and s
 | `title` | `String?` | `"Something went wrong"` | Title for playback failures. |
 | `message` | `String?` | `"We couldn't play this video. Please try again."` | Message for playback failures. |
 | `retryTitle` | `String?` | `"Retry"` | Retry button label. |
+| `drmTitle` | `String?` | depends on the failure | Title for DRM failures, except a lost connection (which shows the No Internet screen). See [Protected Streams](#14-protected-streams-fairplay-drm). |
+| `drmMessage` | `String?` | depends on the failure | Message for those DRM failures. |
 
 ## 10. Repeat and Replay (VOD)
 
@@ -1102,17 +1119,54 @@ let playerConfig = SpPlayerConfig(
 )
 ```
 
-Your title and message apply to playback failures; load failures use a specific title, such as "No Internet". To show your own error UI instead, pass `ErrorConfig(enabled: false)` and handle `didFailToLoadConfiguration(error:)` and `onPlayerError(error:)`, which are called either way.
+Your title and message apply to playback failures; load failures use a specific title, such as "No Internet". DRM failures have their own titles and messages, which `ErrorConfig.drmTitle` / `drmMessage` replace (see [Protected Streams](#14-protected-streams-fairplay-drm)). To show your own error UI instead, pass `ErrorConfig(enabled: false)` and handle `didFailToLoadConfiguration(error:)` and `onPlayerError(error:)` — or the typed `onPlaybackError(_:)` — which are called either way.
 
 ## 12. Diagnostic Logging
 
-Release builds of your app emit no SDK logs by default. To capture logs from a release build, for example on a device farm, turn on diagnostic logging before creating a player:
+As in the Android SDK, the SDK logs in every build, release included, one line per event:
+
+```
+[Component] message
+```
+
+Lines go to Apple's unified log under the subsystem **`SP-Player`**, with the component as the category. Read them in Console.app (filter on the subsystem) or from the terminal; `--level debug` is needed to see the debug and info lines:
+
+```bash
+# Simulator
+xcrun simctl spawn booted log stream --level debug --style compact --predicate 'subsystem == "SP-Player"'
+# One component
+xcrun simctl spawn booted log stream --level debug --predicate 'subsystem == "SP-Player" && category == "Ads"'
+```
+
+| Component | What it logs |
+|---|---|
+| `Player` | The SDK version, device and channel at start, the channel's settings in one line, app background / foreground, and `Session ended → …` when the player closes |
+| `Playback` | Item load, `Player ready`, `First frame`, play / pause / buffering changes, seeks, quality and audio changes, errors and recovery |
+| `Ads` | `Requesting ad → <tag>`, every IMA event (`onAdEvent → type=…`, with the ad and creative IDs when an ad loads), `onAdError → code=…`, ads that IMA drops or that stall |
+| `Midroll` | The content warm-up, `Break #n started` / `→ tag k of N` / `ended → N ad(s) played, M failed, Ns` |
+| `Polling` | The poller's start and stop, each signal change (`Signal received: Ad break start (s=ad_s)`), unexpected replies, failures |
+| `SCTE` | `#EXT-X-CUE-OUT` / `#EXT-X-CUE-IN` and when a break starts |
+| `DRM` | Certificate, token and license requests, and one `DRM failure …` line per failure. URLs are logged as `scheme://host/path?<n params>`, never with tokens. |
+| `Analytics` | Each event beacon; the per-second watch-time heartbeats are not logged |
+| `Network` | `Network available → type=wifi` / `Network lost`, configuration retries, link quality |
+| `UI` | Swipes, full screen, tvOS menu handling |
+| `Perf` | Load-time marks and `Load complete → N ms` |
+
+Work that repeats on a timer (polling, ad progress, analytics heartbeats) logs only when something changes: the start, each new state, the first failure and the recovery, and the stop.
+
+Call these before creating a player:
 
 ```swift
+// Turn the SDK's logs off
+VidgyorPlayer.setDiagnosticLogging(enabled: false)
+
+// Device farms capture the system log, where unified-log debug and info lines don't appear: mirror every line there
 VidgyorPlayer.setDiagnosticLogging(enabled: true, mirrorToSyslog: true)
 ```
 
-`mirrorToSyslog` also writes each line to the system log, which device-farm services capture. Lines look like `[Sp-Player:<Category>] <message>`. Use this for diagnosis only and ship with it off: the SDK logs a lot, and mirroring has a performance cost.
+Mirrored lines read `SP-Player I [Ads] onAdEvent → type=Started, ad 1 of 2`, with the level letter (`D`, `I`, `W`, `E`). They are skipped while a debugger is attached, so Xcode's console shows each line once.
+
+> **Changed in 1.8.0:** the subsystem was `Sp-Player`, and release builds logged nothing unless you turned logging on. Update any Console filters you saved.
 
 ## 13. Full-Screen Playback (iOS)
 
@@ -1145,6 +1199,83 @@ func playerWillExitFullScreen() {
 |---|---|
 | `playerWillEnterFullScreen()` | Called just before the player goes full screen. Allow landscape here if your app doesn't already. |
 | `playerWillExitFullScreen()` | Called once each time the player leaves full screen, whichever way the viewer left it. Restore your orientation policy here. |
+
+## 14. Protected Streams (FairPlay DRM)
+
+The player plays FairPlay-protected HLS streams (key URIs with the `skd://` scheme), live and VOD, on iPhone, iPad and Apple TV. DASH is not supported. Pass a `DRMConfig` as `LiveConfig.drmConfig` or `VODItem.drmConfig`, or leave it out and let the channel configuration supply it:
+
+```swift
+// The license URL is minted per request: the player GETs this URL before every license
+// request and uses the plain-text URL it returns.
+let drm = DRMConfig.fairPlay(
+    certificate: .url(URL(string: "https://cdn.example.com/certs/fairplay.cer")!),
+    licenseTokenURL: URL(string: "https://drm.example.com/fp/license/token?kid=…")!,
+    tokenRequestHeaders: ["Authorization": "Bearer \(userToken)"]
+)
+
+let liveConfig = PlayerConfig.LiveConfig(
+    livetvUrl: "https://example.com/live/protected.m3u8",
+    drmConfig: drm,
+    delegate: self
+)
+
+let vodItem = VODItem(videoUrl: "https://example.com/vod/protected.m3u8", drmConfig: drm)
+```
+
+Two ways to reach the license server:
+
+| Factory | When to use |
+|---|---|
+| `DRMConfig.fairPlay(certificate:licenseURL:licenseRequestHeaders:)` | A fixed license URL. The player POSTs the SPC there and expects the CKC back. |
+| `DRMConfig.fairPlay(certificate:licenseTokenURL:tokenRequestHeaders:licenseRequestHeaders:)` | A token URL that returns the license URL as plain text (quotes and whitespace are tolerated). Called before **every** license request — the first, retries, renewals and every Retry or recovery — so each request carries a fresh token. |
+
+Every URL must be absolute `http(s)`; a debug build stops at the call that passes anything else, and a release build reports error 6004. Blank header names are dropped.
+
+`certificate` — the FairPlay application certificate:
+
+| Value | Meaning |
+|---|---|
+| `.url(URL)` | Downloaded from this URL (DER, base64 or PEM) once per app session. |
+| `.data(Data)` | The certificate bytes (DER). |
+| `.licenseServer` | Downloaded from the license server: the license URL with its last path component `rights` replaced by `certificate`. |
+
+Two settings cover differences between license servers: `licenseRequestFormat` (`.rawSPC`, the default, sends the SPC as `application/octet-stream`; `.base64Form` sends `spc=…&assetId=…`; `.json` sends `{"spc", "assetId"}`) and `contentIdentifier` (`.afterScheme`, the default, uses what follows `skd://`; `.fullURI` uses the whole key URI). The response may be the CKC itself, base64, `<ckc>…</ckc>` or JSON (`ckc`, `CkcMessage` or `License`).
+
+**From the channel configuration.** Without an app-set `drmConfig`, the player uses the channel's `live_drm` block for live and its `vod_drm` block for VOD items, the same keys as the Android SDK. A VOD never uses `live_drm`. An app-set `drmConfig` replaces the channel's block as a whole; fields are never mixed.
+
+```json
+"live_drm": {
+  "scheme": "fairplay",
+  "license_token_url": "https://drm.example.com/fp/license/token?kid=…",
+  "certificate_url": "https://cdn.example.com/certs/fairplay.cer",
+  "token_request_headers": { }
+}
+```
+
+| Key | Meaning |
+|---|---|
+| `license_token_url` / `license_url` | The token URL, or a fixed license URL. If both are usable, the token URL is used. |
+| `token_request_headers` / `license_request_headers` | Headers for each request. |
+| `scheme` | Absent, `fairplay`, `fps`, `com.apple.fps` or `com.apple.streamingkeydelivery`. Any other system (Widevine, PlayReady, …) can't play on iOS, so the block is ignored. |
+| `certificate_url` | iOS only. Without it the certificate comes from the license server. |
+| `license_request_format`, `content_id_format` | iOS only: `raw` / `base64_form` / `json`, and `after_scheme` / `full_uri`. |
+
+The block is read leniently, so a bad block can never break the channel configuration: a block that isn't an object, a key of the wrong type, `null`, blank or `"null"` counts as unset; a URL that isn't absolute `http(s)` is skipped (the other one can still be used); header entries with a blank name or a missing or blank value are dropped. The channel configuration is a public file: never put credentials in it — pass per-user tokens from the app in `tokenRequestHeaders` / `licenseRequestHeaders`.
+
+**Errors.** DRM failures reach `onPlaybackError(_:)` as a `VidgyorPlaybackError` with `category == .drm` and the Android SDK's codes, and the error screen shows:
+
+| Situation | Code | Error screen |
+|---|---|---|
+| A token, license or certificate request failed without a connection | 6004 | No Internet / Please check your network connection |
+| The token or license server answered 401 or 403 | 6004 | Playback restricted / You are not authorised to watch this video |
+| Any other token, license or certificate failure | 6004 | Playback restricted / Unable to acquire playback rights |
+| The stream is FairPlay-encrypted but no DRM settings were given | 6003 | Playback restricted / Unable to acquire playback rights |
+| The device's key system refused the key | 6006 | Playback restricted / Protected playback could not be set up on this device. Please try again |
+| FairPlay isn't available (the Simulator) | 6001 | Protected playback not supported / This device cannot play protected videos |
+
+`ErrorConfig.drmTitle` / `drmMessage` replace the text of every DRM error screen except No Internet. Retry requests a fresh key and token. A refused key, a 4xx answer or missing settings show the error screen at once; a network or server error gets one silent retry first.
+
+> **Note:** FairPlay content plays on physical devices only. In the Simulator a protected stream always ends on the "Protected playback not supported" screen (code `6001`).
 
 ## 🧾 Summary
 | Player Type               | Config Type         |  Delegate                                      |
