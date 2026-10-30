@@ -5,6 +5,19 @@ All notable changes to the Vidgyor SDK are documented here. This project follows
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-10-30
+
+### Fixed
+- **App Store Connect rejected apps embedding the SDK with ITMS-91056 "Invalid privacy
+  manifest"** for `Frameworks/Vidgyor.framework/PrivacyInfo.xcprivacy`. The manifest gave its
+  `UserDefaults` reason (`CA92.1`) under the key `NSPrivacyAccessedAPIReasons`; Apple's key is
+  `NSPrivacyAccessedAPITypeReasons`. 1.6.5, 1.7.0 and 1.8.0 all carry the wrong key: update to
+  1.8.1 and upload a new build. What the manifest declares is unchanged, and there are no code or
+  API changes.
+
+### CocoaPods
+- 1.8.1 is also on the CocoaPods trunk, so `pod 'Vidgyor-Player', '~> 1.8'` picks it up.
+
 ## [1.8.0] - 2026-10-27
 
 ### CocoaPods: the last trunk release

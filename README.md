@@ -87,7 +87,7 @@ platform :ios, '16.0'      # or: platform :tvos, '15.0'
 use_frameworks!
 
 target 'YourApp' do
-  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.0'
+  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.1'
 end
 ```
 
@@ -98,12 +98,12 @@ use_frameworks!
 
 target 'YourApp-iOS' do
   platform :ios, '16.0'
-  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.0'
+  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.1'
 end
 
 target 'YourApp-tvOS' do
   platform :tvos, '15.0'
-  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.0'
+  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.1'
 end
 ```
 

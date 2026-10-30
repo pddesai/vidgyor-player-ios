@@ -3,7 +3,7 @@
 #
 # Installed straight from this repository:
 #
-#   pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.0'
+#   pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.1'
 #
 # 1.7.0 and 1.8.x were also pushed to the CocoaPods trunk with this file. The trunk becomes
 # read-only on 2026-12-02 and takes no later versions, so 1.8.x is the last trunk line, the
