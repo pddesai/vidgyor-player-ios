@@ -69,14 +69,18 @@ After installation, verify both packages are added:
 
 The SDK is also available as the binary pod **`Vidgyor-Player`**, installed straight from this repository. **Google IMA is resolved automatically** — you do not add it yourself.
 
-> **⚠️ CocoaPods trunk: no updates after 2 December 2026.** CocoaPods is making its central
+> **⚠️ CocoaPods trunk: 1.8.2 is the last version there.** CocoaPods is making its central
 > repository (the trunk) read-only on **2 December 2026**, after which it accepts no new versions
-> ([announcement](https://blog.cocoapods.org/CocoaPods-Specs-Repo/)). **1.8.x is the last line
-> published there**, so `pod 'Vidgyor-Player', '~> 1.8'` from the trunk gets no updates after that
-> date, and the trunk pod is marked deprecated. Every release, including all later ones, is
-> published in this repository: point your `Podfile` at this repository and a release tag, as
-> below (each release's tag is listed under **Releases**), or use Swift Package Manager
-> (recommended).
+> ([announcement](https://blog.cocoapods.org/CocoaPods-Specs-Repo/)). **1.8.2, on the trunk from
+> 24 November 2026, is the last version published there**, so `pod 'Vidgyor-Player', '~> 1.8'`
+> from the trunk gets no updates after it, and the trunk pod is marked deprecated. Every release,
+> including all later ones, is published in this repository: point your `Podfile` at this
+> repository and a release tag, as below (each release's tag is listed under **Releases**), or use
+> Swift Package Manager (recommended).
+>
+> 1.8.2 changes some defaults and the meaning of `false` on the ad switches. Read its
+> [CHANGELOG](CHANGELOG.md) entry before you update, or pin `pod 'Vidgyor-Player', '1.8.1'` to
+> stay on 1.8.1 for now.
 
 #### Step 1: Add the pod
 
@@ -87,7 +91,7 @@ platform :ios, '16.0'      # or: platform :tvos, '15.0'
 use_frameworks!
 
 target 'YourApp' do
-  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.1'
+  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.2'
 end
 ```
 
@@ -98,12 +102,12 @@ use_frameworks!
 
 target 'YourApp-iOS' do
   platform :ios, '16.0'
-  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.1'
+  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.2'
 end
 
 target 'YourApp-tvOS' do
   platform :tvos, '15.0'
-  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.1'
+  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.2'
 end
 ```
 
@@ -223,7 +227,6 @@ Define how your VOD playlist and ads behave.
 let vodConfig = PlayerConfig.VODConfig(
     vodList: vodItems,
     vodPrerollAdTag: "https://adserver.com/vast/preroll.xml",
-    disableVodPrerollAdTags: false,
     delegate: self // must conform to VidgyorVODPlayerDelegate
 )
 ```
@@ -234,7 +237,7 @@ let vodConfig = PlayerConfig.VODConfig(
 |----------------------------|---------------|----------|------------------------------------------|
 | `vodList`                 | `[VODItem]`   | ✅       | Array of VOD items.                       |
 | `vodPrerollAdTag`         | `String?`     | ❌       | URL of preroll VAST ad tag.               |
-| `disableVodPrerollAdTags` | `Bool`        | ❌       | Disable preroll ads (default: `false`).   |
+| `disableVodPrerollAdTags` | `Bool?`       | ❌       | Your app's pre-roll switch. `true` turns the pre-roll off; `false` turns it on even when the channel's configuration turns it off; `nil` (the default) lets the channel's configuration decide. With no setting in either place, the pre-roll plays whenever there is a tag. Before 1.8.2 this was a `Bool`, and `false` left the decision to the channel. |
 | `delegate` | `VidgyorVODPlayerDelegate` | ✅ | Delegate for player callbacks. |
 
 ### Step 3: Initialize VidgyorPlayer Instance
@@ -256,7 +259,7 @@ vidgyorPlayer = VidgyorPlayer(
 > ```swift
 > var overlay = OverlayConfig()
 > overlay.speedControl = true
-> overlay.seekForwardIncrement = 10
+> overlay.seekForwardIncrement = 15
 >
 > vidgyorPlayer = VidgyorPlayer(
 >     accountId: "ACCOUNT_ID",
@@ -311,8 +314,9 @@ extension MyViewController: VidgyorVODPlayerDelegate {
         presentAlert(title: "Error", message: error)
     }
 
-    // Triggered when all VOD items finish playing. The SDK is showing its Replay
-    // screen at this point; dismissing here closes the player instead.
+    // Called at the end of the VOD list when `VideoConfig.repeatMode` is `.off`. The SDK
+    // is showing its Replay screen at this point; dismissing here closes the player
+    // instead. With the default, `.one`, the video loops and this is never called.
     func didFinishPlayingAllVideos() {
         vidgyorPlayer?.dismiss()
     }
@@ -387,7 +391,7 @@ extension MyViewController: VidgyorVODPlayerDelegate {
 | Method               | Description         |
 |-------------------------|--------------|
 | `didFailToLoadConfiguration(error:)` | Triggered when SDK fails to initialize. |
-| `didFinishPlayingAllVideos()` | Triggered when all VOD items finish playing. The SDK shows a Replay screen at the same time; call `vidgyorPlayer?.dismiss()` here if you'd rather close the player. |
+| `didFinishPlayingAllVideos()` | Called at the end of the VOD list when `VideoConfig.repeatMode` is `.off`. The SDK shows a Replay screen at the same time; call `vidgyorPlayer?.dismiss()` here if you'd rather close the player. Never called with `.one` (the default) or `.all`; see [Repeat and Replay](#10-repeat-and-replay-vod). |
 
 
 ## 3. Live Player Integration
@@ -399,8 +403,6 @@ let liveConfig = PlayerConfig.LiveConfig(
     title: "Sports Channel",
     livetvUrl: "https://example.com/live/stream.m3u8",
     prerollAdTag: "https://adserver.com/vast/livepreroll.xml",
-    disablePrerollAdTags: false,
-    disableMidrollAdTags: false,
     midrollAdTags: ["https://adserver.com/vast/midroll1.xml"],
     delegate: self
 )
@@ -413,12 +415,16 @@ let liveConfig = PlayerConfig.LiveConfig(
 | `livetvUrl`             | `String?`    | ❌        | Custom live stream URL (optional).               |
 | `drmConfig`             | `DRMConfig?` | ❌        | FairPlay settings for a protected stream. `nil` uses the channel's `live_drm` configuration, if any. See [Protected Streams](#14-protected-streams-fairplay-drm). |
 | `prerollAdTag`          | `String?`    | ❌        | Override preroll ad tag URL.                     |
-| `disablePrerollAdTags`  | `Bool`       | ❌        | `true` turns off live pre-roll ads. The default, `false`, leaves it to the channel's configuration. |
-| `disableMidrollAdTags`  | `Bool`       | ❌        | `true` turns off live mid-roll ads. The default, `false`, leaves it to the channel's configuration. |
+| `disablePrerollAdTags`  | `Bool?`      | ❌        | Your app's live pre-roll switch: `true` turns pre-rolls off, `false` turns them on, `nil` (the default) lets the channel's configuration decide. See below. |
+| `disableMidrollAdTags`  | `Bool?`      | ❌        | Your app's live mid-roll switch: `true` turns mid-rolls off, `false` turns them on, `nil` (the default) lets the channel's configuration decide. See below. |
 | `midrollAdTags`         | `[String]`   | ❌        | Array of midroll ad tag URLs.                    |
 | `delegate` | `VidgyorLivePlayerDelegate` | ✅ | Delegate for playback and analytics events.
 
-> **How live ads are enabled.** Live pre-roll and mid-roll ads play only when the channel's configuration enables them, as on Android. `disablePrerollAdTags` and `disableMidrollAdTags` can only turn ads off: `true` disables them in your app, while `false` leaves the decision to the channel. If live ads don't appear, contact Vidgyor support to check the channel's configuration.
+> **How live ads are switched on and off.** As in the Android SDK, your app's setting wins, and the channel's configuration decides when your app doesn't set one: `true` turns the ads off, `false` turns them on, and `nil` (the default) leaves it to the channel. With no setting in either place, live ads stay off. Ads also need a tag, from your app (`prerollAdTag`, `midrollAdTags`) or from the channel. If live ads don't appear, leave both switches out and ask Vidgyor support to check the channel's configuration.
+>
+> **Changed in 1.8.2:** these switches were `Bool`, defaulting to `false`, and `false` left the decision to the channel. An explicit `false` now forces the ads on even when the channel turns them off, so remove the argument unless that is what you want.
+
+**Mid-roll breaks.** When a break starts (from the channel's ad-break signal, or from SCTE-35 `#EXT-X-CUE-OUT` / `#EXT-X-CUE-IN` tags in the stream), live keeps playing while the first ad loads in the background, and the picture switches at the ad's first frame; no loading screen is shown. Between two ads the last ad frame stays on screen, and an ad that fails is skipped without anything on screen. With SCTE-35 tags the break starts and ends when the viewer reaches the cues, and live then resumes where the break ended, at the viewer's distance from the live edge.
 
 ### Step 2: Initialize Player for Live Content
 ```swift
@@ -919,8 +925,8 @@ Unlike tvOS, there is no need to call `setPlayerFocusEnabled` or `restoreFocusTo
 * Avoid multiple player instances at once.
 * Use delegate methods for tracking ads, buffering, and playback.
 * Always dismiss player before switching between VOD and Live modes.
-* With `repeatMode` `.off` (the default), the SDK shows a Replay screen at the end of a VOD list. Dismiss in `didFinishPlayingAllVideos()` only if you'd rather close the player.
-* Don't ship with diagnostic logging turned on.
+* `repeatMode` is `.one` by default, so a VOD loops until the viewer leaves. Pass `.off` to play the list once and get the Replay screen and `didFinishPlayingAllVideos()` at its end, or `.all` to loop the whole list. See [Repeat and Replay](#10-repeat-and-replay-vod).
+* The SDK logs in every build, as the Android SDK does. To keep its lines out of your app's logs, call `VidgyorPlayer.setDiagnosticLogging(enabled: false)` before creating a player. See [Diagnostic Logging](#12-diagnostic-logging).
 * **On iOS, allow a landscape orientation.** Full screen is landscape-only, and an app that doesn't permit landscape crashes when it starts. See [Full-Screen Playback (iOS)](#13-full-screen-playback-ios).
 * **For custom overlays on tvOS:**
   * Disable player focus with `setPlayerFocusEnabled(false)` before showing UI
@@ -951,7 +957,10 @@ final class PlayerViewController: UIViewController, VidgyorVODPlayerDelegate {
         playerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(playerView)
 
-        vidgyorPlayer = VidgyorPlayer(accountId: "123", channelId: "456", config: .vod(config))
+        // Play the list once (the default, .one, loops the video) so the player can close at the end.
+        let playerConfig = SpPlayerConfig(videoConfig: VideoConfig(repeatMode: .off))
+
+        vidgyorPlayer = VidgyorPlayer(accountId: "123", channelId: "456", config: .vod(config), playerConfig: playerConfig)
         vidgyorPlayer?.attach(to: playerView)
     }
 
@@ -959,6 +968,7 @@ final class PlayerViewController: UIViewController, VidgyorVODPlayerDelegate {
         presentAlert(title: "Error", message: error)
     }
 
+    // Called at the end of the list because repeatMode is .off.
     func didFinishPlayingAllVideos() {
         vidgyorPlayer?.dismiss()
     }
@@ -1004,7 +1014,7 @@ Pass an optional `SpPlayerConfig` to the `VidgyorPlayer` initializer to customiz
 ```swift
 let playerConfig = SpPlayerConfig(
     videoConfig: VideoConfig(autoPlay: true, repeatMode: .off),
-    overlayConfig: OverlayConfig(seekForwardIncrement: 10, showTitle: true),
+    overlayConfig: OverlayConfig(seekForwardIncrement: 15, showTitle: true),
     logoConfig: LogoConfig(enable: true, logoUrl: "https://example.com/logo.png"),
     errorConfig: ErrorConfig(retryTitle: "Try again")
 )
@@ -1035,7 +1045,7 @@ vidgyorPlayer = VidgyorPlayer(
 | `autoPlay` | `Bool?` | `true` | Start playback as soon as the video is ready. |
 | `startPositionMs` | `Int?` | `0` | Start position for the first VOD video, in milliseconds. Applies once, to the first video only; ignored for live. Use it to resume where a viewer left off: the SDK doesn't save positions, so store one yourself (for example from `onTimeUpdate`). |
 | `autoRotate` | `Bool?` | `true` | Enter full screen when the device rotates to landscape. iOS only. See [Full-Screen Playback](#13-full-screen-playback-ios). |
-| `repeatMode` | `RepeatMode?` | `.off` | What happens when a video ends: `.off`, `.one` or `.all`. VOD only. See [Repeat and Replay](#10-repeat-and-replay-vod). |
+| `repeatMode` | `RepeatMode?` | `.one` | What happens when a video ends: `.one` loops it, `.off` plays the list once and shows a Replay screen, `.all` loops the list. VOD only. The default was `.off` before 1.8.2. See [Repeat and Replay](#10-repeat-and-replay-vod). |
 
 **OverlayConfig**
 
@@ -1048,8 +1058,8 @@ vidgyorPlayer = VidgyorPlayer(
 | `speedControl` | `Bool?` | `true` | Show the Speed row in Settings (VOD only). |
 | `showLiveBadge` | `Bool?` | `true` | Show the LIVE / GO LIVE badge on live streams. |
 | `fullScreenControl` | `Bool?` | `true` | Show the full-screen button. iOS only; tvOS is always full screen. |
-| `seekForwardIncrement` | `TimeInterval?` | `15` | Skip-forward step, in seconds (VOD). |
-| `seekBackIncrement` | `TimeInterval?` | `5` | Skip-back step, in seconds (VOD). |
+| `seekForwardIncrement` | `TimeInterval?` | `10` | Skip-forward step, in seconds (VOD). It was 15 before 1.8.2. |
+| `seekBackIncrement` | `TimeInterval?` | `10` | Skip-back step, in seconds (VOD). It was 5 before 1.8.2. |
 | `liveEdgeThreshold` | `TimeInterval?` | `30` | Seconds behind the live edge before the badge changes to GO LIVE. |
 | `backgroundAlpha` | `CGFloat?` | `0.8` | Strength of the dim behind the controls, 0–1, as on Android: the dim is 40% black over the whole player, drawn at this opacity (the default gives a 32% dim). Before 1.8.0 this was the dim's own opacity, with a default of 0.25. |
 | `enableSettings` | `Bool?` | `true` | Master switch for Settings. `false` hides the Quality, Audio and Speed rows. |
@@ -1093,11 +1103,13 @@ The logo appears only on live content. It sits beneath the player controls and s
 
 | Mode | Behavior | `didFinishPlayingAllVideos()` |
 |---|---|---|
-| `.off` (default) | The list plays through once. At the end, the player shows a Replay screen. | Called at the end of the list |
-| `.one` | Loops the current video; a list never advances. | Never called |
+| `.one` (default) | Loops the current video until the viewer leaves; a list never advances. | Never called |
+| `.off` | The list plays through once. At the end, the player shows a Replay screen. | Called at the end of the list |
 | `.all` | Loops the whole list; a single-video list loops that video. | Never called |
 
 The pre-roll ad plays at every content start in all three modes, including each loop.
+
+> **Changed in 1.8.2:** the default was `.off`, and is now `.one`, as in the Android SDK. If your app relies on the Replay screen, on `didFinishPlayingAllVideos()` or on a playlist advancing, pass `.off` or `.all`.
 
 ```swift
 let playerConfig = SpPlayerConfig(videoConfig: VideoConfig(repeatMode: .all))
@@ -1229,15 +1241,15 @@ Two ways to reach the license server:
 | `DRMConfig.fairPlay(certificate:licenseURL:licenseRequestHeaders:)` | A fixed license URL. The player POSTs the SPC there and expects the CKC back. |
 | `DRMConfig.fairPlay(certificate:licenseTokenURL:tokenRequestHeaders:licenseRequestHeaders:)` | A token URL that returns the license URL as plain text (quotes and whitespace are tolerated). Called before **every** license request — the first, retries, renewals and every Retry or recovery — so each request carries a fresh token. |
 
-Every URL must be absolute `http(s)`; a debug build stops at the call that passes anything else, and a release build reports error 6004. Blank header names are dropped.
+Every URL must be absolute `http(s)`. Anything else is logged as `Invalid DRMConfig`, and playback fails with error 6004. Blank header names are dropped.
 
 `certificate` — the FairPlay application certificate:
 
 | Value | Meaning |
 |---|---|
-| `.url(URL)` | Downloaded from this URL (DER, base64 or PEM) once per app session. |
+| `.url(URL)` | Downloaded from this URL once per app session. The response can be the DER bytes, base64 or PEM text, or JSON with a `certificate` or `cert` field. |
 | `.data(Data)` | The certificate bytes (DER). |
-| `.licenseServer` | Downloaded from the license server: the license URL with its last path component `rights` replaced by `certificate`. |
+| `.licenseServer` | Downloaded from the license server: the license URL with its last path component `rights` replaced by `certificate`. The response formats are those of `.url`. |
 
 Two settings cover differences between license servers: `licenseRequestFormat` (`.rawSPC`, the default, sends the SPC as `application/octet-stream`; `.base64Form` sends `spc=…&assetId=…`; `.json` sends `{"spc", "assetId"}`) and `contentIdentifier` (`.afterScheme`, the default, uses what follows `skd://`; `.fullURI` uses the whole key URI). The response may be the CKC itself, base64, `<ckc>…</ckc>` or JSON (`ckc`, `CkcMessage` or `License`).
 

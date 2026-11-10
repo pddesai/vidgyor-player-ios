@@ -5,6 +5,73 @@ All notable changes to the Vidgyor SDK are documented here. This project follows
 
 ## [Unreleased]
 
+## [1.8.2] - 2026-11-11
+
+1.8.2 changes two defaults and the meaning of an explicit `false` on the ad switches. Read
+**Behaviour changes** before upgrading. To keep the 1.8.1 behaviour for now, pin 1.8.1:
+`pod 'Vidgyor-Player', '1.8.1'` with CocoaPods, or "Exact Version" 1.8.1 with Swift Package
+Manager.
+
+### CocoaPods
+- **1.8.2 is the last version on the CocoaPods trunk.** It is published there on 24 November 2026,
+  so `pod 'Vidgyor-Player', '~> 1.8'` picks it up on `pod update`. The trunk becomes read-only on
+  2 December 2026 and the trunk pod is marked deprecated. Later versions are published only in
+  this repository: use Swift Package Manager (recommended) or
+  `pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'vX.Y.Z'`.
+
+### Behaviour changes
+- **VOD repeats by default.** `VideoConfig.repeatMode` now defaults to `.one` (was `.off`), as in
+  the Android SDK. A video loops until the viewer leaves, with its pre-roll at each loop; a
+  playlist stays on its first item; the Replay screen doesn't appear; and
+  `didFinishPlayingAllVideos()` isn't called. Pass `VideoConfig(repeatMode: .off)` for the 1.8.1
+  behaviour, or `.all` to play through a playlist and loop it.
+- **Your app's ad switches now win both ways.** `disablePrerollAdTags` and `disableMidrollAdTags`
+  (`LiveConfig`) and `disableVodPrerollAdTags` (`VODConfig`) are now `Bool?` and default to `nil`,
+  as in the Android SDK. `true` turns the ads off; **`false` now turns them on, even when the
+  channel's configuration turns them off**; `nil`, or leaving the argument out, lets the channel's
+  configuration decide. If your code passes `false`, remove the argument unless you mean to force
+  ads on.
+- **Skip steps are 10 seconds each** (were 15 s forward and 5 s back), on iOS and tvOS. Set
+  `OverlayConfig(seekForwardIncrement:seekBackIncrement:)` to change them.
+- **Live mid-rolls no longer show the "Ad starting soon" screen**, so a channel's mid-roll
+  loading message isn't displayed (see **Changed**).
+
+### Breaking
+- **The three ad switches are optional.** Call sites that pass `true` or `false` still compile.
+  Code that reads `LiveConfig.disablePrerollAdTags`, `LiveConfig.disableMidrollAdTags` or
+  `VODConfig.disableVodPrerollAdTags` as a `Bool` must handle the optional, for example with
+  `== true`.
+
+### Changed
+- **Seamless live mid-rolls.** When a break starts, live keeps playing while the first ad loads
+  in the background, and the picture switches at the ad's first frame. Between two ads the last
+  ad frame stays on screen, so live doesn't appear inside a break. An ad that fails is skipped
+  with nothing on screen, and the next tag is tried.
+- When the picture freezes while the player waits for an ad or for live to return, a loading
+  indicator appears after 1 second. An ad whose video receives no data for 3 seconds is skipped.
+- **SCTE-35 breaks follow the viewer.** A break starts when the viewer reaches the
+  `#EXT-X-CUE-OUT` and ends when the viewer reaches the `#EXT-X-CUE-IN`. Live then resumes where
+  the break ended, keeping the viewer's distance from the live edge, instead of jumping to the
+  live edge.
+- `VideoConfig` and `OverlayConfig` parameters now show their default values instead of `nil`.
+  Apart from the changes above, the effective defaults are the same, and `nil` still means the
+  default.
+
+### Fixed
+- A live mid-roll whose ad failed could restart the break again and again, or leave the
+  "Ad starting soon" screen over paused or live content.
+- SCTE-35 breaks ended up to about 40 seconds early. A break signalled with
+  `#EXT-X-CUE-OUT:DURATION=` now ends after its duration if its `#EXT-X-CUE-IN` never arrives.
+- A live stream that stalled after falling behind the DVR window now restarts inside the window,
+  close to where the viewer was, instead of jumping to the live edge.
+- The documentation of `LiveConfig.drmConfig` and `DRMConfig` named the channel key `drm`; it is
+  `live_drm`. `DRMConfig.Certificate.url` also accepts PEM text and JSON responses.
+
+### Compatibility
+- Google IMA is unchanged: iOS 3.33.0 / tvOS 4.17.0 with SPM; the pod requires `~> 3.33` /
+  `~> 4.17`.
+- Built with Xcode 27.0 (Swift 6.4).
+
 ## [1.8.1] - 2026-10-30
 
 ### Fixed

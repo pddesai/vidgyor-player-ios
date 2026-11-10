@@ -3,12 +3,12 @@
 #
 # Installed straight from this repository:
 #
-#   pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.1'
+#   pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.2'
 #
 # 1.7.0 and 1.8.x were also pushed to the CocoaPods trunk with this file. The trunk becomes
-# read-only on 2026-12-02 and takes no later versions, so 1.8.x is the last trunk line, the
+# read-only on 2026-12-02 and takes no later versions, so 1.8.2 is the last trunk version, the
 # trunk pod is marked deprecated, and the summary and description below say so on
-# cocoapods.org. Releases after 1.8.x install only from this repository (or with SPM).
+# cocoapods.org. Releases after 1.8.2 install only from this repository (or with SPM).
 #
 # With a :git source CocoaPods takes the files from the tagged commit itself, so the
 # prebuilt framework must be committed at Sources/Vidgyor.xcframework — the same copy the
@@ -35,6 +35,10 @@ Pod::Spec.new do |s|
     - Swift Package Manager (recommended), or
     - CocoaPods from GitHub:
       pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'vX.Y.Z'
+
+    1.8.2 changes some defaults (VOD repeat, skip steps) and the meaning of `false` on the ad
+    switches. Read its CHANGELOG entry before updating from 1.8.1, or pin '1.8.1':
+    https://github.com/pddesai/vidgyor-player-ios/blob/main/CHANGELOG.md
 
     VidgyorPlayer is a binary-distributed video player SDK for iOS and tvOS. It provides
     live and VOD playback, FairPlay DRM for protected HLS streams, Google IMA ad integration
