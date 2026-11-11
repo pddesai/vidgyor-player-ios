@@ -94,7 +94,7 @@ public struct OverlayConfig {
   public var backgroundAlpha: CoreFoundation::CGFloat?
   public var enableSettings: Swift::Bool?
   public var showTitle: Swift::Bool?
-  public init(autoHideDelay: Foundation::TimeInterval? = nil, qualityControl: Swift::Bool? = nil, audioControl: Swift::Bool? = nil, captionControl: Swift::Bool? = nil, speedControl: Swift::Bool? = nil, showLiveBadge: Swift::Bool? = nil, fullScreenControl: Swift::Bool? = nil, seekForwardIncrement: Foundation::TimeInterval? = nil, seekBackIncrement: Foundation::TimeInterval? = nil, liveEdgeThreshold: Foundation::TimeInterval? = nil, backgroundAlpha: CoreFoundation::CGFloat? = nil, enableSettings: Swift::Bool? = nil, showTitle: Swift::Bool? = nil)
+  public init(autoHideDelay: Foundation::TimeInterval? = 3.0, qualityControl: Swift::Bool? = true, audioControl: Swift::Bool? = true, captionControl: Swift::Bool? = false, speedControl: Swift::Bool? = true, showLiveBadge: Swift::Bool? = true, fullScreenControl: Swift::Bool? = true, seekForwardIncrement: Foundation::TimeInterval? = 10, seekBackIncrement: Foundation::TimeInterval? = 10, liveEdgeThreshold: Foundation::TimeInterval? = 30, backgroundAlpha: CoreFoundation::CGFloat? = 0.8, enableSettings: Swift::Bool? = nil, showTitle: Swift::Bool? = true)
 }
 public enum PlayerConfig {
   case live(Vidgyor::PlayerConfig.Vidgyor::LiveConfig)
@@ -104,24 +104,24 @@ public enum PlayerConfig {
     public let livetvUrl: Swift::String?
     public let drmConfig: Vidgyor::DRMConfig?
     public let prerollAdTag: Swift::String?
-    public let disablePrerollAdTags: Swift::Bool
-    public let disableMidrollAdTags: Swift::Bool
+    public let disablePrerollAdTags: Swift::Bool?
+    public let disableMidrollAdTags: Swift::Bool?
     public let midrollAdTags: [Swift::String]
     public let delegate: any Vidgyor::VidgyorLivePlayerDelegate
-    public init(title: Swift::String? = nil, livetvUrl: Swift::String? = nil, drmConfig: Vidgyor::DRMConfig? = nil, prerollAdTag: Swift::String? = nil, disablePrerollAdTags: Swift::Bool = false, disableMidrollAdTags: Swift::Bool = false, midrollAdTags: [Swift::String] = [], delegate: any Vidgyor::VidgyorLivePlayerDelegate)
+    public init(title: Swift::String? = nil, livetvUrl: Swift::String? = nil, drmConfig: Vidgyor::DRMConfig? = nil, prerollAdTag: Swift::String? = nil, disablePrerollAdTags: Swift::Bool? = nil, disableMidrollAdTags: Swift::Bool? = nil, midrollAdTags: [Swift::String] = [], delegate: any Vidgyor::VidgyorLivePlayerDelegate)
     @available(*, deprecated, renamed: "title")
     public var channelName: Swift::String? {
       get
     }
     @available(*, deprecated, message: "Use init(title:livetvUrl:...) — channelName was renamed to title")
-    public init(channelName: Swift::String?, livetvUrl: Swift::String? = nil, prerollAdTag: Swift::String? = nil, disablePrerollAdTags: Swift::Bool = false, disableMidrollAdTags: Swift::Bool = false, midrollAdTags: [Swift::String] = [], delegate: any Vidgyor::VidgyorLivePlayerDelegate)
+    public init(channelName: Swift::String?, livetvUrl: Swift::String? = nil, prerollAdTag: Swift::String? = nil, disablePrerollAdTags: Swift::Bool? = nil, disableMidrollAdTags: Swift::Bool? = nil, midrollAdTags: [Swift::String] = [], delegate: any Vidgyor::VidgyorLivePlayerDelegate)
   }
   public struct VODConfig {
     public let vodList: [Vidgyor::VODItem]
     public let vodPrerollAdTag: Swift::String?
-    public let disableVodPrerollAdTags: Swift::Bool
+    public let disableVodPrerollAdTags: Swift::Bool?
     public let delegate: any Vidgyor::VidgyorVODPlayerDelegate
-    public init(vodList: [Vidgyor::VODItem], vodPrerollAdTag: Swift::String? = nil, disableVodPrerollAdTags: Swift::Bool = false, delegate: any Vidgyor::VidgyorVODPlayerDelegate)
+    public init(vodList: [Vidgyor::VODItem], vodPrerollAdTag: Swift::String? = nil, disableVodPrerollAdTags: Swift::Bool? = nil, delegate: any Vidgyor::VidgyorVODPlayerDelegate)
   }
 }
 public struct SpPlayerConfig {
@@ -158,7 +158,7 @@ public struct VideoConfig {
   public var startPositionMs: Swift::Int?
   public var autoRotate: Swift::Bool?
   public var repeatMode: Vidgyor::RepeatMode?
-  public init(resizeMode: Vidgyor::VideoResizeMode? = nil, autoPlay: Swift::Bool? = nil, startPositionMs: Swift::Int? = nil, autoRotate: Swift::Bool? = nil, repeatMode: Vidgyor::RepeatMode? = nil)
+  public init(resizeMode: Vidgyor::VideoResizeMode? = nil, autoPlay: Swift::Bool? = true, startPositionMs: Swift::Int? = 0, autoRotate: Swift::Bool? = true, repeatMode: Vidgyor::RepeatMode? = .one)
 }
 public protocol VidgyorPlayerDelegate : AnyObject {
   func didFailToLoadConfiguration(error: Swift::String)

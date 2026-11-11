@@ -23,7 +23,7 @@
 
 Pod::Spec.new do |s|
   s.name    = 'Vidgyor-Player'
-  s.version = '1.8.1'
+  s.version = '1.8.2'
 
   s.summary = 'Video player SDK for iOS and tvOS (live, VOD, Google IMA ads). Last CocoaPods trunk release: later versions are on GitHub.'
   s.description = <<-DESC
