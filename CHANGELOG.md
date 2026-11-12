@@ -13,7 +13,7 @@ All notable changes to the Vidgyor SDK are documented here. This project follows
 Manager.
 
 ### CocoaPods
-- **1.8.2 is the last version on the CocoaPods trunk.** It is published there on 24 November 2026,
+- **1.8.2 is the last version on the CocoaPods trunk.** It was published there on 12 November 2026,
   so `pod 'Vidgyor-Player', '~> 1.8'` picks it up on `pod update`. The trunk becomes read-only on
   2 December 2026 and the trunk pod is marked deprecated. Later versions are published only in
   this repository: use Swift Package Manager (recommended) or

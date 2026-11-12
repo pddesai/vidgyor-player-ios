@@ -71,8 +71,8 @@ The SDK is also available as the binary pod **`Vidgyor-Player`**, installed stra
 
 > **⚠️ CocoaPods trunk: 1.8.2 is the last version there.** CocoaPods is making its central
 > repository (the trunk) read-only on **2 December 2026**, after which it accepts no new versions
-> ([announcement](https://blog.cocoapods.org/CocoaPods-Specs-Repo/)). **1.8.2, on the trunk from
-> 24 November 2026, is the last version published there**, so `pod 'Vidgyor-Player', '~> 1.8'`
+> ([announcement](https://blog.cocoapods.org/CocoaPods-Specs-Repo/)). **1.8.2, on the trunk since
+> 12 November 2026, is the last version published there**, so `pod 'Vidgyor-Player', '~> 1.8'`
 > from the trunk gets no updates after it, and the trunk pod is marked deprecated. Every release,
 > including all later ones, is published in this repository: point your `Podfile` at this
 > repository and a release tag, as below (each release's tag is listed under **Releases**), or use
