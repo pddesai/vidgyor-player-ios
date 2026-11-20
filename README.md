@@ -63,24 +63,30 @@ After installation, verify both packages are added:
 3. Scroll to **Frameworks, Libraries, and Embedded Content**.
 4. Confirm both **Vidgyor** and **GoogleInteractiveMediaAds** are listed.
 
+#### Optional: Google Cast (Chromecast, iOS)
+
+Only for Chromecast: add Google's package `https://github.com/googlecast/google-cast-ios-sdk`, product **`GoogleCastDynamic`**, to your iOS app target. See section 15 for the whole setup. Without it the SDK works as before.
+
 ---
 
 ### Installation via CocoaPods
 
 The SDK is also available as the binary pod **`Vidgyor-Player`**, installed straight from this repository. **Google IMA is resolved automatically** — you do not add it yourself.
 
-> **⚠️ CocoaPods trunk: 1.8.2 is the last version there.** CocoaPods is making its central
+> **⚠️ CocoaPods trunk: 1.8.3 is the last version there.** CocoaPods is making its central
 > repository (the trunk) read-only on **2 December 2026**, after which it accepts no new versions
-> ([announcement](https://blog.cocoapods.org/CocoaPods-Specs-Repo/)). **1.8.2, on the trunk since
-> 12 November 2026, is the last version published there**, so `pod 'Vidgyor-Player', '~> 1.8'`
+> ([announcement](https://blog.cocoapods.org/CocoaPods-Specs-Repo/)). **1.8.3, on the trunk since
+> 20 November 2026, is the last version published there**, so `pod 'Vidgyor-Player', '~> 1.8'`
 > from the trunk gets no updates after it, and the trunk pod is marked deprecated. Every release,
 > including all later ones, is published in this repository: point your `Podfile` at this
 > repository and a release tag, as below (each release's tag is listed under **Releases**), or use
 > Swift Package Manager (recommended).
 >
-> 1.8.2 changes some defaults and the meaning of `false` on the ad switches. Read its
-> [CHANGELOG](CHANGELOG.md) entry before you update, or pin `pod 'Vidgyor-Player', '1.8.1'` to
-> stay on 1.8.1 for now.
+> 1.8.3 adds Chromecast on iPhone and iPad (section 15) and fixes a black screen on live channels
+> whose stream has ended; apps that don't cast need no change.
+> Updating from 1.8.1 or earlier? 1.8.2 changed some defaults and the meaning of `false` on the ad
+> switches: read its [CHANGELOG](CHANGELOG.md) entry first, or pin `pod 'Vidgyor-Player', '1.8.1'`
+> to stay on 1.8.1 for now.
 
 #### Step 1: Add the pod
 
@@ -91,7 +97,7 @@ platform :ios, '16.0'      # or: platform :tvos, '15.0'
 use_frameworks!
 
 target 'YourApp' do
-  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.2'
+  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.3'
 end
 ```
 
@@ -102,12 +108,12 @@ use_frameworks!
 
 target 'YourApp-iOS' do
   platform :ios, '16.0'
-  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.2'
+  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.3'
 end
 
 target 'YourApp-tvOS' do
   platform :tvos, '15.0'
-  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.2'
+  pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'v1.8.3'
 end
 ```
 
@@ -129,6 +135,7 @@ import Vidgyor
 
 #### Important Notes
 
+- **Chromecast (iOS): add Google Cast with Swift Package Manager** (`GoogleCastDynamic`), in the same project (section 15): the setup the SDK is tested with, rather than Google's pod `google-cast-sdk`.
 - **`use_frameworks!` is required.** Vidgyor ships as a dynamic framework, so a static-linkage Podfile (`use_frameworks! :linkage => :static`) is not supported.
 - **Do not add Google IMA manually.** The pod declares it per platform — `GoogleAds-IMA-iOS-SDK` on iOS, `GoogleAds-IMA-tvOS-SDK` on tvOS. Adding it again produces a `Multiple commands produce .../GoogleInteractiveMediaAds.framework` build error. If you are migrating from SPM, remove the Google IMA package from your project first.
 - **Set `ENABLE_USER_SCRIPT_SANDBOXING = NO`** on your app target. Xcode enables it by default for new projects, and it makes CocoaPods' "[CP] Embed Pods Frameworks" phase fail with `Sandbox: rsync(...) deny(1) file-write-create`. This affects every CocoaPods project that embeds frameworks, not just Vidgyor. You can also set it from the Podfile:
@@ -184,6 +191,7 @@ import Vidgyor
 * Diagnostic Logging
 * Full-Screen Playback (iOS)
 * Protected Streams (FairPlay DRM)
+* Chromecast (iPhone and iPad)
 
 
 ## 1. Global Player Instance
@@ -1163,6 +1171,7 @@ xcrun simctl spawn booted log stream --level debug --predicate 'subsystem == "SP
 | `Network` | `Network available → type=wifi` / `Network lost`, configuration retries, link quality |
 | `UI` | Swipes, full screen, tvOS menu handling |
 | `Perf` | Load-time marks and `Load complete → N ms` |
+| `Cast` | Chromecast (iOS): the Cast setup, the device search, sessions, what the TV does, and why the Cast button may not show |
 
 Work that repeats on a timer (polling, ad progress, analytics heartbeats) logs only when something changes: the start, each new state, the first failure and the recovery, and the stop.
 
@@ -1289,6 +1298,134 @@ The block is read leniently, so a bad block can never break the channel configur
 
 > **Note:** FairPlay content plays on physical devices only. In the Simulator a protected stream always ends on the "Protected playback not supported" screen (code `6001`).
 
+## 15. Chromecast (iPhone and iPad)
+
+Since 1.8.3 a player on iPhone or iPad can cast its content to a Chromecast, or to a TV with Chromecast built in (Google TV and Android TV, among others). The TV plays the stream itself, and the phone becomes its remote: the player shows a casting card in place of the video, its controls drive the TV, and it plays on here when the cast ends. Casting is opt-in, and Apple TV has no Chromecast.
+
+### 15.1 What the TV plays
+
+The SDK casts to Google's **Default Media Receiver**, which needs no registration with Google:
+
+- **The content only, with its title.** No ads, slates, channel logo, video thumbnail or player controls are shown on the TV, and the phone plays no ads while it casts.
+- **Clear https streams:** HLS, DASH or MP4 over https, without DRM. A player whose content can't play there (DRM, plain http, a channel that blocks casting, a VOD with `sendVodUrl` off) shows no Cast button.
+- **Live:** the channel's `cast_url` when it has one (15.3), else the URL the player plays: your `LiveConfig.livetvUrl` when you set it, else the channel's stream. The TV starts at the live edge.
+- **VOD:** the video's URL, from the position the phone was at.
+- **Cross-origin requests:** the receiver is a web page, so the stream's servers must allow cross-origin requests: playlists, segments and keys need an `Access-Control-Allow-Origin` header (for example `*`). Without it the cast starts, but the TV doesn't play.
+- **Visible to the room:** what a cast sends to the TV (the stream URL and the title) can be read by every phone connected to that TV. Give channels whose stream URLs are signed or carry a token a clear `cast_url`.
+- **Back on the phone:** when the cast ends, a VOD continues from where the TV was and live from the live edge, without a pre-roll the viewer already saw. After a lost connection the player comes back paused, as the TV may still be playing.
+
+### 15.2 Set up your app
+
+**Step 1: add Google Cast** with Swift Package Manager, in the same Xcode project as Vidgyor (also in a CocoaPods project: SPM packages and pods work side by side):
+
+1. **File → Add Packages...**, enter `https://github.com/googlecast/google-cast-ios-sdk`, version **4.8.6** or newer.
+2. Add the product **`GoogleCastDynamic`** to your iOS app target (the product the SDK is tested with).
+
+The SDK doesn't link Google Cast: it finds it at runtime in apps that add it. Apps that don't add Google Cast are not affected in any way: the SDK builds, launches and plays without it, and the app contains no reference to Google Cast.
+
+**Step 2: let your app find Cast devices.** iOS asks the viewer for local-network access the first time a player with Cast turned on opens. Add these to your app's `Info.plist`:
+
+```xml
+<key>NSLocalNetworkUsageDescription</key>
+<string>${PRODUCT_NAME} uses the local network to find Chromecast devices on your Wi-Fi network.</string>
+<key>NSBonjourServices</key>
+<array>
+    <string>_googlecast._tcp</string>
+    <string>_CC1AD845._googlecast._tcp</string>
+</array>
+```
+
+**Step 3: start Cast once, early**, in your app delegate:
+
+```swift
+import Vidgyor
+
+func application(_ application: UIApplication,
+                 didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+    SpCast.start()
+    return true
+}
+```
+
+`SpCast.start()` returns `false`, and logs why, when Cast stays off (Google Cast missing, or older than the SDK needs).
+
+**Step 4: turn Cast on**, for a channel with `"enable_cast": true` in its configuration, or for a player in code, which wins over the channel:
+
+```swift
+var playerConfig = SpPlayerConfig()
+playerConfig.castConfig = CastConfig(enable: true)
+// or: SpPlayerConfig(castConfig: CastConfig(enable: true))
+```
+
+Each player whose content can be cast then shows a Cast button at the top right of its controls while a Cast device is on the network. It is hidden during the player's own ads. The phone and the TV must be on the same Wi-Fi network.
+
+### 15.3 Channel configuration
+
+| Key | Meaning |
+|---|---|
+| `enable_cast` | `true` turns Cast on for the channel's players, `false` off (the legacy `enable_cast_player` also works). `CastConfig.enable` in code wins. Off when neither says. |
+| `cast_url` | A clear https live stream the TV plays instead of the URL the phone plays. Use it when the phone's stream is signed, DRM-protected or doesn't allow cross-origin requests. |
+| `cast_fallback` | `block` keeps the channel's content off the TV: no Cast button. Absent or `content` allows it; any other value blocks. |
+| `cast_mime_type` | The stream type the TV is told (`application/x-mpegURL`, `application/dash+xml` or `video/mp4`), for URLs that don't show it. |
+| `cast_title` | The title the TV shows (the legacy `chromecast_title` also works); else the media title, else the channel name. |
+
+The keys are read leniently: a value of the wrong type counts as unset and never breaks the channel configuration.
+
+### 15.4 `CastConfig`
+
+Per player, in `SpPlayerConfig`: `castConfig = CastConfig(…)`.
+
+| Field | Default | Meaning |
+|---|---|---|
+| `enable` | `nil` | `true` / `false` turn Cast on or off for this player; `nil` follows the channel's `enable_cast`. |
+| `showCastButton` | `true` | Show the Cast button in the player's controls. It is hidden during the player's own ads either way. |
+| `resumeLocallyOnEnd` | `true` | When a cast ends, play on here if the TV was playing and the app is in front. `false` brings the player back paused. |
+| `sendVodUrl` | `true` | Send the VOD URL to the TV. Set `false` for VOD URLs that must stay private; that VOD then can't be cast. |
+
+### 15.5 While a player casts
+
+- **Casting card:** the player shows the TV's state ("Playing on Living Room TV", "Paused on …", "Reconnecting to …", "Stopped on …") instead of the video. Its controls (play / pause, seek on VOD, GO LIVE on live) drive the TV, and its buttons (**Play here**, **Play on TV**, **Replay**, **Cast this**) appear when they apply. **Play here** ends the cast and plays on the phone. The phone's volume buttons set the TV's volume, and the Cast button opens Google's Cast dialog, where the viewer can also stop casting.
+- **A player opened while a cast is running** goes straight to the TV.
+- **`VidgyorPlayer`:** `isCasting` and `castDeviceName` tell you the state; `stopCasting()` ends the cast and brings the player back here.
+- **`SpCast`:** `SpCast.isAvailable` is `true` once Cast is set up; `SpCast.stopCasting()` ends the current cast.
+- **Events:** four optional methods on `VidgyorVODPlayerDelegate` and `VidgyorLivePlayerDelegate`, with default empty implementations:
+
+```swift
+func onCastAvailabilityChanged(available: Bool) {
+    // A Cast device appeared on the network, or the last one went away.
+}
+
+func onCastSessionStarted(deviceName: String, receiver: CastReceiverType) {
+    // This player now plays on the TV.
+}
+
+func onCastSessionEnded(reason: CastEndReason) {
+    // The cast ended and the player is back on the phone.
+}
+
+func onCastError(_ error: CastError) {
+    // Casting failed. Never reported as a player error: the player itself can play here.
+}
+```
+
+| Type | Values |
+|---|---|
+| `CastReceiverType` | `webReceiver` (Google's Default Media Receiver) |
+| `CastEndReason` | `stoppedByUser`, `stoppedOnTV`, `connectionLost`, `error`, `other` |
+| `CastErrorType` | `loadRejected`, `loadFailed`, `fallbackBlocked`, `receiverError` |
+| `CastError` | `type`, `message`, `isRetryable` |
+
+### 15.6 Troubleshooting
+
+| Symptom | Cause / fix |
+|---|---|
+| No Cast button | Check, in this order: Cast is on (`enable_cast` or `CastConfig.enable`); `SpCast.start()` ran and the log has no `[Cast] Cast off: …` line; the content can play on the receiver (https, no DRM unless `cast_url`, `cast_fallback` not `block`, VOD with `sendVodUrl` on); the `Info.plist` entries of 15.2; the phone and the TV are on the same Wi-Fi network (not a guest network, no VPN); local-network access is allowed for your app in **Settings → Privacy & Security → Local Network**. When no device is found 15 seconds after the search starts, the SDK logs one `[Cast]` line naming the likely cause. |
+| `[Cast] Cast off: Google's Cast library is not in the app` | Add `GoogleCastDynamic` (15.2). |
+| `[Cast] Cast off: … older than the SDK needs` | Update Google Cast to 4.8.6 or newer. |
+| The cast starts, but the TV doesn't play | The stream's servers don't allow cross-origin requests: add `Access-Control-Allow-Origin` to the playlists, segments and keys, or give the channel a `cast_url` that has it. Also check that the stream is https and has no DRM. |
+
+The SDK's Chromecast log lines use the category `Cast` (section 12).
+
 ## 🧾 Summary
 | Player Type               | Config Type         |  Delegate                                      |
 |-------------------------|--------------|-----------|
@@ -1297,4 +1434,4 @@ The block is read leniently, so a bad block can never break the channel configur
 
 Both configurations share the same `attach(to:)` workflow but differ in ad handling and playback source.
 
-Both player types work on **tvOS** and **iOS** with the same public API. Platform differences are limited to focus/gesture input handling, the `showOverlay`/`hideOverlay` delegate callbacks (tvOS only) and the `playerWillEnterFullScreen`/`playerWillExitFullScreen` callbacks (iOS only).
+Both player types work on **tvOS** and **iOS** with the same public API. Platform differences are limited to focus/gesture input handling, the `showOverlay`/`hideOverlay` delegate callbacks (tvOS only), the `playerWillEnterFullScreen`/`playerWillExitFullScreen` callbacks (iOS only) and Chromecast (iOS only, section 15).

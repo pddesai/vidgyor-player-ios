@@ -5,6 +5,50 @@ All notable changes to the Vidgyor SDK are documented here. This project follows
 
 ## [Unreleased]
 
+## [1.8.3] - 2026-11-20
+
+1.8.3 adds Chromecast on iPhone and iPad, and fixes a black screen on live channels whose stream
+has ended. Apps that don't cast need no change: Google Cast is optional, and the SDK builds and
+runs without it.
+
+### CocoaPods
+- **1.8.3 is the last version on the CocoaPods trunk.** It is published there on 20 November 2026,
+  so `pod 'Vidgyor-Player', '~> 1.8'` picks it up on `pod update`. The trunk becomes read-only on
+  2 December 2026 and the trunk pod is marked deprecated. Later versions are published only in
+  this repository: use Swift Package Manager (recommended) or
+  `pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'vX.Y.Z'`.
+
+### Added
+- **Chromecast on iPhone and iPad.** A player whose channel allows casting (`enable_cast`, or
+  `CastConfig.enable`) shows a Cast button in its controls when a Cast device is on the network.
+  The TV plays the content stream through Google's Default Media Receiver, with its title and
+  without ads, logo or thumbnail; the player becomes its remote and plays on here when the cast
+  ends (VOD from the TV's position, live at the live edge, without a pre-roll already seen). Setup:
+  add Google Cast (`GoogleCastDynamic`, 4.8.6 or newer) with Swift Package Manager, add
+  `NSLocalNetworkUsageDescription` and `NSBonjourServices` to your Info.plist, and call
+  `SpCast.start()` at launch. See README section 15.
+- New API (iOS): `SpCast`, `CastConfig` and `SpPlayerConfig.castConfig`, `VidgyorPlayer.isCasting`,
+  `castDeviceName` and `stopCasting()`, and `VidgyorPlayerDelegate`'s `onCastAvailabilityChanged`,
+  `onCastSessionStarted`, `onCastSessionEnded` and `onCastError` (all with empty defaults).
+- Channel configuration keys: `enable_cast`, `cast_url`, `cast_fallback`, `cast_mime_type`,
+  `cast_title`.
+- Log category `Cast`.
+
+### Fixed
+- **Live channels whose stream has ended.** When a live channel's stream had ended (its HLS
+  playlist ends with `#EXT-X-ENDLIST`), the player could show a black screen after the pre-roll.
+  It now plays such a stream from where it is, or from the start when it is already at its end,
+  also when the viewer presses Play. Nothing changes for streams that are live.
+
+### Compatibility
+- Apps that don't cast need no change. The SDK doesn't link Google Cast: it finds it at runtime in
+  apps that add it, and apps without it contain no reference to it.
+- Only clear https streams can be cast, and their servers must allow cross-origin requests.
+  Apple TV has no Chromecast.
+- CocoaPods apps also add Google Cast with Swift Package Manager (`GoogleCastDynamic`), the setup
+  this release is tested with.
+- Updating from 1.8.1 or earlier: read 1.8.2's behaviour changes below.
+
 ## [1.8.2] - 2026-11-11
 
 1.8.2 changes two defaults and the meaning of an explicit `false` on the ad switches. Read
@@ -13,9 +57,10 @@ All notable changes to the Vidgyor SDK are documented here. This project follows
 Manager.
 
 ### CocoaPods
-- **1.8.2 is the last version on the CocoaPods trunk.** It was published there on 12 November 2026,
+- **1.8.2 is on the CocoaPods trunk** (1.8.3, published there on 20 November 2026, became the last
+  trunk version). It was published there on 12 November 2026,
   so `pod 'Vidgyor-Player', '~> 1.8'` picks it up on `pod update`. The trunk becomes read-only on
-  2 December 2026 and the trunk pod is marked deprecated. Later versions are published only in
+  2 December 2026 and the trunk pod is marked deprecated. Versions after 1.8.3 are published only in
   this repository: use Swift Package Manager (recommended) or
   `pod 'Vidgyor-Player', :git => 'https://github.com/pddesai/vidgyor-player-ios.git', :tag => 'vX.Y.Z'`.
 
