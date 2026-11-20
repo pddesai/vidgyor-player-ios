@@ -8,16 +8,72 @@ import CoreGraphics
 import Foundation
 import GoogleInteractiveMediaAds
 import Network
+import ObjectiveC
 import Swift
 import UIKit
 import _Concurrency
 import _StringProcessing
 import _SwiftConcurrencyShims
 import os
+public enum CastReceiverType {
+  case webReceiver
+  public static func == (a: Vidgyor::CastReceiverType, b: Vidgyor::CastReceiverType) -> Swift::Bool
+  public func hash(into hasher: inout Swift::Hasher)
+  public var hashValue: Swift::Int {
+    get
+  }
+}
+public enum CastEndReason {
+  case stoppedByUser
+  case stoppedOnTV
+  case connectionLost
+  case error
+  case other
+  public static func == (a: Vidgyor::CastEndReason, b: Vidgyor::CastEndReason) -> Swift::Bool
+  public func hash(into hasher: inout Swift::Hasher)
+  public var hashValue: Swift::Int {
+    get
+  }
+}
+public enum CastErrorType {
+  case loadRejected
+  case loadFailed
+  case fallbackBlocked
+  case receiverError
+  public static func == (a: Vidgyor::CastErrorType, b: Vidgyor::CastErrorType) -> Swift::Bool
+  public func hash(into hasher: inout Swift::Hasher)
+  public var hashValue: Swift::Int {
+    get
+  }
+}
+public struct CastError : Swift::Error, Swift::CustomStringConvertible {
+  public let type: Vidgyor::CastErrorType
+  public let message: Swift::String
+  public let isRetryable: Swift::Bool
+  public init(type: Vidgyor::CastErrorType, message: Swift::String, isRetryable: Swift::Bool)
+  public var description: Swift::String {
+    get
+  }
+}
+public enum SpCast {
+  @discardableResult
+  public static func start() -> Swift::Bool
+  public static var isAvailable: Swift::Bool {
+    get
+  }
+  public static func stopCasting()
+}
 public struct AnalyticsConfig {
   public var customEnabled: Swift::Bool?
   public var firebaseEnabled: Swift::Bool?
   public init(customEnabled: Swift::Bool? = nil, firebaseEnabled: Swift::Bool? = nil)
+}
+public struct CastConfig {
+  public var enable: Swift::Bool?
+  public var showCastButton: Swift::Bool
+  public var resumeLocallyOnEnd: Swift::Bool
+  public var sendVodUrl: Swift::Bool
+  public init(enable: Swift::Bool? = nil, showCastButton: Swift::Bool = true, resumeLocallyOnEnd: Swift::Bool = true, sendVodUrl: Swift::Bool = true)
 }
 public struct DRMConfig : Swift::Sendable, Swift::CustomStringConvertible {
   public enum Certificate : Swift::Sendable {
@@ -130,6 +186,8 @@ public struct SpPlayerConfig {
   public var logoConfig: Vidgyor::LogoConfig
   public var analyticsConfig: Vidgyor::AnalyticsConfig
   public var errorConfig: Vidgyor::ErrorConfig
+  public var castConfig: Vidgyor::CastConfig
+  public init(videoConfig: Vidgyor::VideoConfig = VideoConfig(), overlayConfig: Vidgyor::OverlayConfig = OverlayConfig(), logoConfig: Vidgyor::LogoConfig = LogoConfig(), analyticsConfig: Vidgyor::AnalyticsConfig = AnalyticsConfig(), errorConfig: Vidgyor::ErrorConfig = ErrorConfig(), castConfig: Vidgyor::CastConfig)
   public init(videoConfig: Vidgyor::VideoConfig = VideoConfig(), overlayConfig: Vidgyor::OverlayConfig = OverlayConfig(), logoConfig: Vidgyor::LogoConfig = LogoConfig(), analyticsConfig: Vidgyor::AnalyticsConfig = AnalyticsConfig(), errorConfig: Vidgyor::ErrorConfig = ErrorConfig())
 }
 public enum VideoResizeMode {
@@ -175,6 +233,10 @@ public protocol VidgyorPlayerDelegate : AnyObject {
   func didRequestFocusMove(_ direction: Vidgyor::PlayerFocusDirection)
   func playerWillEnterFullScreen()
   func playerWillExitFullScreen()
+  func onCastAvailabilityChanged(available: Swift::Bool)
+  func onCastSessionStarted(deviceName: Swift::String, receiver: Vidgyor::CastReceiverType)
+  func onCastSessionEnded(reason: Vidgyor::CastEndReason)
+  func onCastError(_ error: Vidgyor::CastError)
 }
 extension Vidgyor::VidgyorPlayerDelegate {
   public func notifyPlay()
@@ -190,6 +252,10 @@ extension Vidgyor::VidgyorPlayerDelegate {
   public func didRequestFocusMove(_ direction: Vidgyor::PlayerFocusDirection)
   public func playerWillEnterFullScreen()
   public func playerWillExitFullScreen()
+  public func onCastAvailabilityChanged(available: Swift::Bool)
+  public func onCastSessionStarted(deviceName: Swift::String, receiver: Vidgyor::CastReceiverType)
+  public func onCastSessionEnded(reason: Vidgyor::CastEndReason)
+  public func onCastError(_ error: Vidgyor::CastError)
 }
 public protocol VidgyorVODPlayerDelegate : Vidgyor::VidgyorPlayerDelegate {
   func onCurrentPlaybackTime(seconds: Swift::Int)
@@ -390,6 +456,13 @@ final public class VidgyorPlayer {
   public static func setDiagnosticLogging(enabled: Swift::Bool, mirrorToSyslog: Swift::Bool = false)
   public init(accountId: Swift::String, channelId: Swift::String, config: Vidgyor::PlayerConfig, playerConfig: Vidgyor::SpPlayerConfig = SpPlayerConfig())
   final public func replay()
+  final public var isCasting: Swift::Bool {
+    get
+  }
+  final public var castDeviceName: Swift::String? {
+    get
+  }
+  final public func stopCasting()
   @objc deinit
 }
 extension Vidgyor::VidgyorPlayer {
@@ -400,6 +473,12 @@ extension Vidgyor::VidgyorPlayer {
   final public func embed(in containerViewController: UIKit::UIViewController)
   final public func dismiss()
 }
+extension Vidgyor::CastReceiverType : Swift::Equatable {}
+extension Vidgyor::CastReceiverType : Swift::Hashable {}
+extension Vidgyor::CastEndReason : Swift::Equatable {}
+extension Vidgyor::CastEndReason : Swift::Hashable {}
+extension Vidgyor::CastErrorType : Swift::Equatable {}
+extension Vidgyor::CastErrorType : Swift::Hashable {}
 extension Vidgyor::DRMConfig.Vidgyor::LicenseRequestFormat : Swift::Equatable {}
 extension Vidgyor::DRMConfig.Vidgyor::LicenseRequestFormat : Swift::Hashable {}
 extension Vidgyor::DRMConfig.Vidgyor::LicenseRequestFormat : Swift::RawRepresentable {}
